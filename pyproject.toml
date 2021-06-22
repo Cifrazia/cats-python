@@ -25,7 +25,9 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     ""
 ]
-include = ["cats"]
+packages = [
+    { include = "cats" }
+]
 
 [tool.poetry.urls]
 "Bug Tracker" = "https://github.com/AdamBrianBright/cats-python/issues"
