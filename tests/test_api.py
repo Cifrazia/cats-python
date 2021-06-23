@@ -130,7 +130,7 @@ async def test_api_speed_limiter(cats_conn: Connection):
     await cats_conn.send(0x0000, payload)
     start = time()
     res = await cats_conn.recv()
-    assert 0 <= time() - start <= 1.0
+    assert 0 <= time() - start <= 0.5
     assert res.data == payload
 
     await cats_conn.set_download_speed(50_000)
@@ -138,7 +138,7 @@ async def test_api_speed_limiter(cats_conn: Connection):
     await cats_conn.send(0x0000, payload)
     start = time()
     res = await cats_conn.recv()
-    assert 1 <= time() - start <= 2.5
+    assert 1 <= time() - start <= 2.0
     assert res.data == payload
 
 

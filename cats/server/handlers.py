@@ -1,5 +1,9 @@
+import asyncio
 from collections import defaultdict
 from dataclasses import dataclass
+from logging import getLogger
+from random import random
+from time import time
 from types import GeneratorType
 from typing import Any, Awaitable, DefaultDict, Optional, Type, Union
 
@@ -18,6 +22,7 @@ __all__ = [
 ]
 
 T_Headers = Union[dict[str, Any], Headers]
+logging = getLogger('CATS')
 
 
 @dataclass
@@ -98,6 +103,7 @@ class Handler:
     max_file_total_size: Optional[int] = None
     min_file_amount: Optional[int] = None
     max_file_amount: Optional[int] = None
+    fix_exec_time: Optional[Union[int, float]] = None
 
     def __init__(self, action: Action):
         self.action = action
@@ -123,8 +129,16 @@ class Handler:
         cls.handler_id = id
 
     async def __call__(self) -> Optional[BaseAction]:
+        st = time()
         await self.prepare()
-        return await self.handle()
+        res = await self.handle()
+        if self.fix_exec_time is not None:
+            sp = time() - st
+            if sp < self.fix_exec_time:
+                await asyncio.sleep(self.fix_exec_time - sp - random() / 20)
+            elif sp > self.fix_exec_time + 0.2:
+                logging.warning(f'{type(self).__qualname__} run time exceeded fixed: {sp:.3f}/{self.fix_exec_time:.3f}')
+        return res
 
     async def prepare(self) -> None:
         """Called before handler() method"""

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cats-python"
-version = "0.1.0b"
+version = "0.1.1"
 description = "Cifrazia Action Transport System for Python"
 authors = ["Bogdan Parfenov <adam.brian.bright@gmail.com>"]
 license = "MIT"
@@ -20,7 +20,6 @@ classifiers = [
     "Operating System :: MacOS :: MacOS X",
     "Operating System :: Microsoft :: Windows :: Windows 10",
     "Operating System :: POSIX :: Linux",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     ""
@@ -52,8 +51,8 @@ pytest-cov = "^2.12.1"
 pytest-tornado = "^0.8.1"
 
 [tool.poetry.scripts]
-cats_test_server = 'cats.server:main'
-cats_test_client = 'cats.client:main'
+#cats_test_server = 'cats.server:main'
+#cats_test_client = 'cats.client:main'
 
 
 [build-system]

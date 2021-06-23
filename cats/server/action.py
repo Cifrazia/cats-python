@@ -274,10 +274,10 @@ class BasicAction(BaseAction, abstract=True):
             max_chunk_size = min(MAX_IN_MEMORY, conn.download_speed) or MAX_IN_MEMORY
             with Delay(conn.download_speed) as delay:
                 while left > 0:
-                    await delay()
                     size = min(left, max_chunk_size)
                     chunk = fh.read(size)
                     left -= size
+                    await delay(size)
                     conn.reset_idle_timer()
                     debug(f'[SEND {conn.address}] [{int2hex(self.message_id):<4}] -> {bytes2hex(chunk[:64])}...')
                     await conn.stream.write(chunk)
@@ -544,7 +544,6 @@ class StreamAction(Action):
                     chunk = chunk[i:]
                 if not chunk:
                     continue
-                await delay()
                 if not isinstance(chunk, (bytes, bytearray, memoryview)):
                     raise MalformedDataError('Provided data chunk is not binary')
 
@@ -553,6 +552,7 @@ class StreamAction(Action):
                 if chunk_size >= 1 << 32:
                     raise ProtocolError('Provided data chunk exceeded max chunk size')
 
+                await delay(chunk_size + 4)
                 conn.reset_idle_timer()
                 await conn.stream.write(to_uint(chunk_size, 4))
                 await conn.stream.write(chunk)

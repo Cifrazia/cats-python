@@ -23,25 +23,29 @@ logging = getLogger('CATS.utils')
 
 
 class Delay:
-    def __init__(self, speed: int):
+    def __init__(self, speed: int = 0):
         self.speed = speed
+        self.start = time()
+        self.sent = 0
 
     def __enter__(self):
         self.start = time()
+        self.sent = 0
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         ...
 
-    async def __call__(self):
+    async def __call__(self, length: int = 0):
         if not self.speed:
             return
 
-        to_sleep = max(0.0, min(1.0, 1.0 - time() + self.start))
+        went = time() - self.start + 0.01
         self.start = time()
-        if to_sleep > 0:
-            print(f' SLEEP {to_sleep:0.4f}'.center(64, '='))
-            await asyncio.sleep(to_sleep)
+        self.sent = max(0, length + self.sent - self.speed * went)
+        if not self.sent:
+            return
+        await asyncio.sleep(self.sent / self.speed)
 
 
 def tmp_file(**kwargs) -> Path:
