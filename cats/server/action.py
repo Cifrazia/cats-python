@@ -283,8 +283,8 @@ class BasicAction(BaseAction, abstract=True):
                     await conn.stream.write(chunk)
         finally:
             fh.close()
-            if data_type == T_JSON and isinstance(data, bytes):
-                debug(f'[SEND {conn.address}] [{int2hex(self.message_id):<4}] -> {data.decode("utf-8")}')
+            if data_type == T_JSON:
+                debug(f'[SEND {conn.address}] [{int2hex(self.message_id):<4}] -> {self.data}')
 
 
 class Action(BasicAction):

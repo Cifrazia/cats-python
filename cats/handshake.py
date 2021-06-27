@@ -38,9 +38,14 @@ class SHA256TimeHandshake(Handshake):
     async def validate(self, server, conn) -> None:
         handshake: bytes = await wait_for(conn.stream.read_bytes(64), self.timeout)
         conn.debug and logging.debug(f'[RECV {conn.address}] Handshake: {bytes2hex(handshake)}')
-        if handshake.decode('utf-8') not in self.get_hashes():
+        try:
+            if handshake.decode('utf-8') not in self.get_hashes():
+                await conn.stream.write(b'\x00')
+                conn.debug and logging.debug(f'[SEND {conn.address} Handshake failed')
+                raise HandshakeError('Invalid handshake')
+        except UnicodeDecodeError:
             await conn.stream.write(b'\x00')
-            conn.debug and logging.debug(f'[SEND {conn.address} Handshake failed')
-            raise HandshakeError('Invalid handshake')
-        await conn.stream.write(b'\x01')
-        conn.debug and logging.debug(f'[SEND {conn.address}] Handshake passed')
+            raise HandshakeError('Malformed handshake')
+        else:
+            await conn.stream.write(b'\x01')
+            conn.debug and logging.debug(f'[SEND {conn.address}] Handshake passed')

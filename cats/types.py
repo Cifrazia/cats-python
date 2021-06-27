@@ -68,4 +68,8 @@ class Headers(dict):
 
     @classmethod
     def decode(cls, headers: Bytes) -> 'Headers':
-        return cls(ujson.decode(headers.decode('utf-8') or '{}') or {})
+        try:
+            headers = ujson.decode(headers.decode('utf-8'))
+        except ValueError:  # + UnicodeDecodeError
+            headers = None
+        return cls(headers or {})
