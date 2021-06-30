@@ -1,4 +1,5 @@
 import asyncio
+import re
 import tempfile
 import warnings
 from importlib import import_module
@@ -8,6 +9,9 @@ from time import time
 from typing import Union
 
 import math
+import ujson
+
+from cats.types import Json
 
 __all__ = [
     'Delay',
@@ -17,6 +21,7 @@ __all__ = [
     'bytes2hex',
     'format_amount',
     'enable_stream_debug',
+    'filter_json',
 ]
 
 logging = getLogger('CATS.utils')
@@ -169,3 +174,42 @@ def enable_stream_debug():
     IOStream.read_until = read_until
     IOStream.read_bytes = read_bytes
     IOStream.write = write
+
+
+_HIDE = re.compile(r'.*(password|key|secret|jwt|pwd|пароль|ключ|секрет).*', re.IGNORECASE | re.UNICODE)
+_MASKED = '<masked>'
+
+
+def filter_json(json: Json, max_len: int = 16, max_size: int = 64, indent: str = '', x: int = 0) -> str:
+    s = t = ''
+    if indent:
+        t = f'\n{indent * x}'
+        s = t + indent
+    x += 1
+    if isinstance(json, dict):
+        if not len(json):
+            res = '{}'
+        else:
+            more = f',{s}<{len(json) - max_len} more>' if len(json) > max_len else ''
+            res = '{' + ','.join([
+                f'{s}{ujson.encode(k)}: {_MASKED if _HIDE.match(k) else filter_json(v, max_len, max_size, indent, x)}'
+                for i, (k, v) in enumerate(json.items())
+                if i < max_len
+            ]) + more + t + '}'
+    elif isinstance(json, (list, set, tuple)):
+        if not len(json):
+            res = '[]'
+        else:
+            more = f',{s}<{len(json) - max_len} more>' if len(json) > max_len else ''
+            res = '[' + ','.join([
+                s + filter_json(i, max_len, max_size, indent, x)
+                for i in json[:max_len]
+            ]) + more + t + ']'
+    else:
+        res = ujson.encode(json)
+        if len(res) > max_size:
+            res = res[:max_size] + '...'
+            if res[0] == '"':
+                res += '"'
+
+    return res

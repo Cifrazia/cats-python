@@ -1,13 +1,18 @@
 import gzip
-import os
 import shutil
 from pathlib import Path
 from typing import Union
 
+import zlib
+
 __all__ = [
+    'C_NONE',
+    'C_ZLIB',
+    'C_GZIP',
     'BaseCompressor',
     'DummyCompressor',
     'GzipCompressor',
+    'ZlibCompressor',
     'Compressor',
 ]
 
@@ -60,7 +65,7 @@ class GzipCompressor(BaseCompressor):
 
     @classmethod
     async def compress(cls, data: bytes) -> bytes:
-        return gzip.compress(data, compresslevel=9)
+        return gzip.compress(data, compresslevel=6)
 
     @classmethod
     async def decompress(cls, data: bytes) -> bytes:
@@ -69,7 +74,7 @@ class GzipCompressor(BaseCompressor):
     @classmethod
     async def compress_file(cls, src: Path, dst: Path) -> None:
         with src.open('rb') as rc:
-            with gzip.open(dst.resolve().as_posix(), 'wb', compresslevel=9) as wc:
+            with gzip.open(dst.resolve().as_posix(), 'wb', compresslevel=6) as wc:
                 while line := rc.read(1 << 24):
                     wc.write(line)
 
@@ -81,12 +86,48 @@ class GzipCompressor(BaseCompressor):
                     wc.write(line)
 
 
+class ZlibCompressor(BaseCompressor):
+    type_id = 0x02
+    type_name = 'ZLib'
+
+    @classmethod
+    async def compress(cls, data: bytes) -> bytes:
+        return zlib.compress(data, level=6)
+
+    @classmethod
+    async def decompress(cls, data: bytes) -> bytes:
+        return zlib.decompress(data)
+
+    @classmethod
+    async def compress_file(cls, src: Path, dst: Path) -> None:
+        compressor = zlib.compressobj(level=6)
+        with src.open('rb') as rc:
+            with dst.open('wb') as wc:
+                while line := rc.read(1 << 24):
+                    wc.write(compressor.compress(line))
+                wc.write(compressor.flush())
+        del compressor
+
+    @classmethod
+    async def decompress_file(cls, src: Path, dst: Path) -> None:
+        compressor = zlib.decompressobj()
+        with src.open('rb') as rc:
+            with dst.open('wb') as wc:
+                while line := rc.read(1 << 24):
+                    wc.write(compressor.decompress(line))
+                wc.write(compressor.flush())
+
+
+C_NONE = DummyCompressor.type_id
+C_GZIP = GzipCompressor.type_id
+C_ZLIB = ZlibCompressor.type_id
+
+
 class Compressor:
-    T_NONE = 0b0000
-    T_GZIP = 0b0001
     compressors = {
-        T_NONE: DummyCompressor,
-        T_GZIP: GzipCompressor,
+        C_NONE: DummyCompressor,
+        C_GZIP: GzipCompressor,
+        C_ZLIB: ZlibCompressor,
     }
 
     @classmethod
@@ -129,17 +170,12 @@ class Compressor:
     @classmethod
     async def propose_compression(cls, buff: Union[bytes, Path]):
         if isinstance(buff, bytes):
-            if len(buff) > 4096:
-                return cls.T_GZIP
-            else:
-                return cls.T_NONE
-
+            ln = len(buff)
         elif isinstance(buff, Path):
-            s = os.path.getsize(buff.as_posix())
-            if s > 4096:
-                return cls.T_GZIP
-            else:
-                return cls.T_NONE
-
+            ln = buff.stat().st_size
         else:
             raise TypeError('Unsupported buffer type')
+        if ln <= 4096:
+            return C_NONE
+        else:
+            return C_ZLIB

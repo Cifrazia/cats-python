@@ -16,7 +16,7 @@ from cats.compression import Compressor
 from cats.errors import MalformedDataError, ProtocolError
 from cats.struct import O_NETWORK, uInt1, uInt2, uInt4, uInt8
 from cats.types import Headers
-from cats.utils import Delay, bytes2hex, format_amount, int2hex, tmp_file
+from cats.utils import Delay, bytes2hex, filter_json, format_amount, int2hex, tmp_file
 
 __all__ = [
     'Input',
@@ -224,7 +224,7 @@ class BasicAction(BaseAction, abstract=True):
         buff = await Compressor.decompress(buff, compression=self.compression)
         self.data = await Codec.decode(buff, self.data_type, self.headers)
         if self.data_type == T_JSON:
-            debug(f'[RECV {self.conn.address}] [{int2hex(self.message_id):<4}] <- {self.data}')
+            debug(f'[RECV {self.conn.address}] [{int2hex(self.message_id):<4}] <- {filter_json(self.data)}')
 
     async def _recv_large_data(self):
         left = self.data_len
@@ -284,7 +284,7 @@ class BasicAction(BaseAction, abstract=True):
         finally:
             fh.close()
             if data_type == T_JSON:
-                debug(f'[SEND {conn.address}] [{int2hex(self.message_id):<4}] -> {self.data}')
+                debug(f'[SEND {conn.address}] [{int2hex(self.message_id):<4}] -> {filter_json(self.data)}')
 
 
 class Action(BasicAction):
