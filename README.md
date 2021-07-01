@@ -29,3 +29,23 @@ With `Django` support:
 ```shell
 poetry add cats-python[django]
 ```
+
+# [WIP] Protocol declaration
+
+## Compression
+
+### Compression algorithms
+
+`0x00` **No compression**
+
+All payload in not compressed (unless the payload itself is a compressed data)
+
+`0x01` **GZip**
+
+Payload compressed with GZip at level 6
+
+`0x02` **ZLib**
+
+Payload compressed with ZLib DEFLATE method at level 6
+
+Additional header with **Adler32** checksum provided `{"Adler32": 1235323}` 

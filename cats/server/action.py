@@ -221,7 +221,7 @@ class BasicAction(BaseAction, abstract=True):
             chunk, left = await self._recv_chunk(left)
             buff.extend(chunk)
 
-        buff = await Compressor.decompress(buff, compression=self.compression)
+        buff = await Compressor.decompress(buff, self.headers, compression=self.compression)
         self.data = await Codec.decode(buff, self.data_type, self.headers)
         if self.data_type == T_JSON:
             debug(f'[RECV {self.conn.address}] [{int2hex(self.message_id):<4}] <- {filter_json(self.data)}')
@@ -236,7 +236,7 @@ class BasicAction(BaseAction, abstract=True):
                     chunk, left = await self._recv_chunk(left)
                     fh.write(chunk)
 
-            await Compressor.decompress_file(src, dst, compression=self.compression)
+            await Compressor.decompress_file(src, dst, self.headers, compression=self.compression)
             self.data = await Codec.decode(dst, self.data_type, self.headers)
         except Exception:
             dst.unlink(missing_ok=True)
@@ -255,10 +255,10 @@ class BasicAction(BaseAction, abstract=True):
         data, data_type = await Codec.encode(self.data, self.headers, self.offset)
         if isinstance(data, Path):
             data, buff = tmp_file(), data
-            compression = await Compressor.compress_file(buff, data, self.compression)
+            compression = await Compressor.compress_file(buff, data, self.headers, self.compression)
             data_len = data.stat().st_size
         else:
-            data, compression = await Compressor.compress(data, self.compression)
+            data, compression = await Compressor.compress(data, self.headers, self.compression)
             data_len = len(data)
         return data, data_len, data_type, compression
 
@@ -477,7 +477,7 @@ class StreamAction(Action):
                     debug(f'[RECV {self.conn.address}] [{int2hex(self.message_id):<4}] <- {bytes2hex(chunk[:64])}...')
                     left -= len(chunk)
                     tmp.write(chunk)
-            await Compressor.decompress_file(part, dst, compression=self.compression)
+            await Compressor.decompress_file(part, dst, self.headers, compression=self.compression)
             data_len = dst.stat().st_size
             with dst.open('rb') as tmp:
                 while i := tmp.read(MAX_IN_MEMORY):
@@ -495,7 +495,7 @@ class StreamAction(Action):
             debug(f'[RECV {self.conn.address}] [{int2hex(self.message_id):<4}] <- {bytes2hex(chunk[:64])}...')
             left -= len(chunk)
             part += chunk
-        part = await Compressor.decompress(part, compression=self.compression)
+        part = await Compressor.decompress(part, self.headers, compression=self.compression)
         fh.write(part)
         return len(part)
 
@@ -547,7 +547,7 @@ class StreamAction(Action):
                 if not isinstance(chunk, (bytes, bytearray, memoryview)):
                     raise MalformedDataError('Provided data chunk is not binary')
 
-                chunk, _ = await Compressor.compress(chunk, compression)
+                chunk, _ = await Compressor.compress(chunk, self.headers, compression)
                 chunk_size = len(chunk)
                 if chunk_size >= 1 << 32:
                     raise ProtocolError('Provided data chunk exceeded max chunk size')
