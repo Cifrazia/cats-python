@@ -42,7 +42,7 @@ class Application:
         return list(self._channels.keys())
 
     def channel(self, name: str) -> Iterable[Connection]:
-        return (i for i in self._channels.get(name, []))
+        return iter(self._channels.get(name, []))
 
     def attach_conn_to_channel(self, conn: Connection, channel: str) -> None:
         if conn not in self._channels[channel]:
@@ -66,4 +66,4 @@ class Application:
 
     @property
     def middleware(self) -> Iterable[Middleware]:
-        return (i for i in self._middleware)
+        return iter(self._middleware)

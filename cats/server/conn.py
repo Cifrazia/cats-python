@@ -229,19 +229,21 @@ class Connection:
     def sign_out(self):
         logging.debug(f'Signed out from {self.identity.__class__.__name__} <{self.host}:{self.port}>')
         if self.signed_in():
-            model_group = f'model_{self.identity.model_name}'
-            auth_group = f'{model_group}:{self._identity.id}'
-
-            self.detach_from_channel(auth_group)
-            self.detach_from_channel(model_group)
-
-            self._identity = None
-            self._credentials = None
-
+            self._sign_out_and_remove_from_channels()
         self.scope.set_user(self.identity_scope_user)
         add_breadcrumb(message='Sign out')
 
         return self
+
+    def _sign_out_and_remove_from_channels(self):
+        model_group = f'model_{self.identity.model_name}'
+        auth_group = f'{model_group}:{self._identity.id}'
+
+        self.detach_from_channel(auth_group)
+        self.detach_from_channel(model_group)
+
+        self._identity = None
+        self._credentials = None
 
     def close(self, exc=None):
         if self._closed:
