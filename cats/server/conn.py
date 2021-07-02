@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager, contextmanager
 from functools import partial
 from logging import getLogger
 from random import randint
-from typing import Any, Iterable, Optional
+from typing import Any, Iterable, Optional, TypeVar
 
 from sentry_sdk import Scope, add_breadcrumb, capture_exception
 from tornado.iostream import IOStream, StreamClosedError
@@ -16,10 +16,12 @@ from cats.server.handlers import HandlerItem
 from cats.types import BytesAnyGen
 
 __all__ = [
+    'ConnType',
     'Connection',
 ]
 
 logging = getLogger('CATS.conn')
+ConnType = TypeVar('ConnType', bound='Connection')
 
 
 class Connection:

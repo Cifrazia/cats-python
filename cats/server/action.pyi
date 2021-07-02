@@ -131,7 +131,7 @@ class Action(BasicAction):
                  handler_id: int = None, data_len: int = None, data_type: int = None, compression: int = None,
                  send_time: float = None):
         self.handler_id: Optional[int] = handler_id
-        self.send_time = send_time or (time_ns() >> 6)
+        self.send_time = send_time or (time_ns() // 1000000)
         super().__init__(data, headers=headers, status=status, message_id=message_id,
                          data_len=data_len, data_type=data_type, compression=compression)
 
@@ -252,7 +252,7 @@ class PingAction(BaseAction):
 
     def __init__(self, send_time: int = None):
         super().__init__()
-        self.recv_time: int = time_ns() >> 6
+        self.recv_time: int = time_ns() // 1000000
         self.send_time: int = send_time or self.recv_time
 
     @classmethod

@@ -309,7 +309,7 @@ class Action(BasicAction):
         assert data_type is None or isinstance(data_type, int), 'Invalid data type provided'
 
         self.handler_id = handler_id
-        self.send_time = send_time or (time_ns() >> 6)
+        self.send_time = send_time or (time_ns() // 1000000)
         super().__init__(data, headers=headers, status=status, message_id=message_id,
                          data_len=data_len, data_type=data_type, compression=compression)
 
@@ -375,7 +375,7 @@ class Action(BasicAction):
             header = self.type_id + self.head_struct.pack(
                 self.handler_id,
                 self.message_id,
-                time_ns() >> 6,
+                time_ns() // 1000000,
                 data_type,
                 compression,
                 _data_len
@@ -516,7 +516,7 @@ class StreamAction(Action):
         header = self.type_id + self.head_struct.pack(
             self.handler_id,
             self.message_id,
-            time_ns() >> 6,
+            time_ns() // 1000000,
             self.data_type,
             compression
         )
@@ -732,7 +732,7 @@ class PingAction(BaseAction):
 
     def __init__(self, send_time=None):
         super().__init__()
-        self.recv_time = time_ns() >> 6
+        self.recv_time = time_ns() // 1000000
         self.send_time = send_time or self.recv_time
 
     @classmethod
@@ -754,6 +754,6 @@ class PingAction(BaseAction):
     async def send(self, conn):
         async with conn.lock_write():
             conn.reset_idle_timer()
-            now = time_ns() >> 6
+            now = time_ns() // 1000000
             await conn.stream.write(self.type_id + to_uint(now, 8))
             debug(f'[SEND {conn.address}] PONG {now}')

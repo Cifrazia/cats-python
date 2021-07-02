@@ -1,6 +1,6 @@
 import asyncio
 from contextlib import asynccontextmanager, contextmanager
-from typing import Any, Optional, Type
+from typing import Any, Optional, Type, TypeVar
 
 from sentry_sdk import Scope
 from tornado.iostream import IOStream, StreamClosedError
@@ -11,6 +11,8 @@ from cats.server.action import BaseAction, Input
 from cats.server.app import Application
 from cats.server.handlers import Handler
 from cats.types import BytesAnyGen, T_Headers
+
+ConnType = TypeVar('ConnType', bound='Connection')
 
 
 class Connection:

@@ -1,18 +1,17 @@
 import asyncio
 import socket
 import ssl
-from datetime import datetime
+import time
 from logging import getLogger
 from typing import Any, Optional, Union
 
-import pytz
 from tornado.iostream import IOStream, StreamClosedError
 from tornado.tcpserver import TCPServer
 from tornado.testing import bind_unused_port
 
 from cats.handshake import Handshake
 from cats.server.app import Application
-from cats.server.conn import Connection
+from cats.server.conn import ConnType, Connection
 
 __all__ = [
     'Server',
@@ -22,6 +21,7 @@ logging = getLogger('CATS.Server')
 
 
 class Server(TCPServer):
+    CONNECTION: ConnType = Connection
 
     def __init__(self, app: Application, handshake: Handshake = None,
                  ssl_options: Optional[Union[dict[str, Any], ssl.SSLContext]] = None,
@@ -65,11 +65,11 @@ class Server(TCPServer):
         api_version = int.from_bytes(await stream.read_bytes(4), 'big', signed=False)
         self.debug and logging.debug(f'[RECV {address}] API Version: {api_version}')
 
-        current_time = round(datetime.now(tz=pytz.UTC).timestamp() * 1000)
+        current_time = time.time_ns() // 1000000
         await stream.write(current_time.to_bytes(8, 'big', signed=False))
         self.debug and logging.debug(f'[SEND {address}] Server time: {current_time}')
 
-        conn = Connection(stream, address, api_version, self.app, debug=self.debug)
+        conn = self.CONNECTION(stream, address, api_version, self.app, debug=self.debug)
         if self.handshake is not None:
             await self.handshake.validate(self, conn)
 
