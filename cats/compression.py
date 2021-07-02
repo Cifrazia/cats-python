@@ -89,18 +89,22 @@ class GzipCompressor(BaseCompressor):
 
 
 class ZlibCompressor(BaseCompressor):
+    """Modified ZLib compressor: uint4 length of original data will be prepended to result payload"""
     type_id = 0x02
     type_name = 'ZLib'
 
     @classmethod
     async def compress(cls, data: bytes, headers: T_Headers) -> bytes:
         headers['Adler32'] = zlib.adler32(data)
-        return zlib.compress(data, level=6)
+        return len(data).to_bytes(4, 'big', signed=False) + zlib.compress(data, level=6)
 
     @classmethod
     async def decompress(cls, data: bytes, headers: T_Headers) -> bytes:
+        ln, data = int.from_bytes(data[:4], 'big', signed=False), data[4:]
         buff = zlib.decompress(data)
         checksum = headers.get('Adler32', None)
+        if ln != len(buff):
+            raise IOError('Broken data received: Length mismatch')
         if checksum is not None and zlib.adler32(buff) != checksum:
             raise IOError('Broken data received: Checksum mismatch')
         return buff
@@ -109,8 +113,10 @@ class ZlibCompressor(BaseCompressor):
     async def compress_file(cls, src: Path, dst: Path, headers: T_Headers) -> None:
         compressor = zlib.compressobj(level=6)
         value = 1
+        ln = src.stat().st_size
         with src.open('rb') as rc:
             with dst.open('wb') as wc:
+                wc.write(ln.to_bytes(4, 'big', signed=False))
                 while line := rc.read(1 << 24):
                     value = zlib.adler32(line, value)
                     wc.write(compressor.compress(line))
@@ -124,11 +130,13 @@ class ZlibCompressor(BaseCompressor):
         value = 1
         with src.open('rb') as rc:
             with dst.open('wb') as wc:
+                ln = int.from_bytes(rc.read(4), 'big', signed=False)
                 while line := rc.read(1 << 24):
                     wc.write(buff := compressor.decompress(line))
                     value = zlib.adler32(buff, value)
                 wc.write(compressor.flush())
-
+        if dst.stat().st_size != ln:
+            raise IOError('Broken data received: Length mismatch')
         checksum = headers.get('Adler32', None)
         if checksum is not None and value != checksum:
             dst.unlink(missing_ok=True)
