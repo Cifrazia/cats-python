@@ -142,7 +142,7 @@ class BaseAction(dict):
         timeout = self.conn.app.input_timeout if timeout is None else timeout
 
         if not bypass_limit:
-            amount = sum(1 for i in self.conn.input_deq.values() if not i.bypass_count)
+            amount = sum(not i.bypass_count for i in self.conn.input_deq.values())
             if amount > self.conn.app.INPUT_LIMIT:
                 k = min(self.conn.input_deq.keys())
                 self.conn.input_deq[k].cancel()

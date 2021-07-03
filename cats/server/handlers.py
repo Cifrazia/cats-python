@@ -130,8 +130,9 @@ class Handler:
 
     async def __call__(self) -> Optional[BaseAction]:
         st = time()
-        await self.prepare()
-        res = await self.handle()
+        res = await self.prepare()
+        if res is None:
+            res = await self.handle()
         if self.fix_exec_time is not None:
             sp = time() - st
             if sp < self.fix_exec_time:
@@ -161,14 +162,13 @@ class Handler:
             raise TypeError('Unsupported data type. Expected JSON')
 
         data = self.action.data
-        if self.Loader is not None:
-            if many is None:
-                many = isinstance(data, list)
-            form = self.Loader(data=data, many=many)
-            form.is_valid(raise_exception=True)
-            return form.validated_data
-        else:
+        if self.Loader is None:
             return data
+        if many is None:
+            many = isinstance(data, list)
+        form = self.Loader(data=data, many=many)
+        form.is_valid(raise_exception=True)
+        return form.validated_data
 
     async def json_dump(self, data, *, headers: T_Headers = None,
                         status: int = 200, many: bool = None) -> Action:
