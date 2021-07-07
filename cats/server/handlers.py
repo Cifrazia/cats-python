@@ -7,8 +7,6 @@ from time import time
 from types import GeneratorType
 from typing import Any, Awaitable, DefaultDict, Optional, Type, Union
 
-import ujson
-
 from cats.codecs import T_FILE, T_JSON
 from cats.identity import Identity, IdentityChild
 from cats.plugins import Form, QuerySet, Scheme, SchemeTypes, scheme_dump, scheme_load
@@ -174,8 +172,6 @@ class Handler:
             if not plain and many is None:
                 many = isinstance(data, (list, tuple, set, QuerySet, GeneratorType))
             data = scheme_dump(self.Dumper, data, many=many, plain=plain)
-        else:
-            ujson.encode(data)
 
         return Action(data=data, headers=headers, status=status)
 

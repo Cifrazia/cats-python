@@ -9,7 +9,7 @@ from time import time
 from typing import Union
 
 import math
-import ujson
+import orjson
 
 from cats.types import Json
 
@@ -177,39 +177,26 @@ def enable_stream_debug():
 
 
 _HIDE = re.compile(r'.*(password|key|secret|jwt|pwd|пароль|ключ|секрет).*', re.IGNORECASE | re.UNICODE)
-_MASKED = '<masked>'
 
 
-def filter_json(json: Json, max_len: int = 16, max_size: int = 64, indent: str = '', x: int = 0) -> str:
-    s = t = ''
+def filter_json(json: Json, max_len: int = 16, max_size: int = 64, indent: bool = False) -> str:
+    option = 0
     if indent:
-        t = f'\n{indent * x}'
-        s = t + indent
-    x += 1
-    if isinstance(json, dict):
-        if not len(json):
-            res = '{}'
-        else:
-            more = f',{s}<{len(json) - max_len} more>' if len(json) > max_len else ''
-            res = '{' + ','.join([
-                f'{s}{ujson.encode(k)}: {_MASKED if _HIDE.match(k) else filter_json(v, max_len, max_size, indent, x)}'
-                for i, (k, v) in enumerate(json.items())
-                if i < max_len
-            ]) + more + t + '}'
-    elif isinstance(json, (list, set, tuple)):
-        if not len(json):
-            res = '[]'
-        else:
-            more = f',{s}<{len(json) - max_len} more>' if len(json) > max_len else ''
-            res = '[' + ','.join([
-                s + filter_json(i, max_len, max_size, indent, x)
-                for i in json[:max_len]
-            ]) + more + t + ']'
-    else:
-        res = ujson.encode(json)
-        if len(res) > max_size:
-            res = res[:max_size] + '...'
-            if res[0] == '"':
-                res += '"'
+        option |= orjson.OPT_INDENT_2
+    return orjson.dumps(f_json(json, max_len, max_size), option=option).decode('utf-8')
 
-    return res
+
+def f_json(json: Json, max_len: int = 16, max_size: int = 64) -> Json:
+    if isinstance(json, dict):
+        return {
+            k: '<masked>' if _HIDE.match(k) else f_json(v, max_len, max_size)
+            for k, v in (*tuple(json.items())[:max_size], ('<more>', f'{len(json) - max_len} items'))[:len(json)]
+        }
+    if isinstance(json, list):
+        return [
+            f_json(v, max_len, max_size)
+            for v in (*json[:max_size], f'{len(json) - max_len} more')[:len(json)]
+        ]
+    if isinstance(json, str) and len(json) > max_len:
+        return json[:max_len] + '...'
+    return json

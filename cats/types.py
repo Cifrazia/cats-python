@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Any, AsyncIterable, Iterable, Type, Union
 
-import ujson
+import orjson
 
 from cats.errors import ProtocolError
 
@@ -62,14 +62,12 @@ class Headers(dict):
         super().update(self._convert(*args, **kwargs))
 
     def encode(self) -> bytes:
-        return ujson.encode(self, ensure_ascii=False,
-                            escape_forward_slashes=False,
-                            encode_html_chars=True).encode('utf-8')
+        return orjson.dumps(self)
 
     @classmethod
     def decode(cls, headers: Bytes) -> 'Headers':
         try:
-            headers = ujson.decode(headers.decode('utf-8'))
+            headers = orjson.loads(headers)
         except ValueError:  # + UnicodeDecodeError
             headers = None
         return cls(headers or {})

@@ -4,7 +4,7 @@ from os.path import getsize
 from pathlib import Path
 from typing import Any, IO, Optional, Union
 
-import ujson
+import orjson
 
 from cats.plugins import BaseModel, BaseSerializer
 from cats.types import Byte, Json, T_Headers
@@ -89,7 +89,6 @@ JSON = Union[Json, BaseModel, BaseSerializer]
 class JsonCodec(BaseCodec):
     type_id = 0x01
     type_name = 'json'
-    encoding = 'utf-8'
 
     @classmethod
     async def encode(cls, data: JSON, headers: T_Headers, offset: int = 0) -> bytes:
@@ -97,7 +96,7 @@ class JsonCodec(BaseCodec):
             data = [cls._convert(i) for i in data]
         else:
             data = cls._convert(data)
-        return await cls._encode(data, headers=headers, offset=offset)
+        return await cls._encode(data, offset=offset)
 
     @classmethod
     def _convert(cls, data: JSON):
@@ -108,14 +107,11 @@ class JsonCodec(BaseCodec):
         return data
 
     @classmethod
-    async def _encode(cls, data: Json, headers: T_Headers, offset: int = 0) -> bytes:
+    async def _encode(cls, data: Json, offset: int = 0) -> bytes:
         if not isinstance(data, (str, int, float, dict, list, bool, type(None))):
             raise TypeError(f'{cls.__name__} does not support {type(data).__name__}')
 
-        return ujson.encode(data, ensure_ascii=False,
-                            escape_forward_slashes=False,
-                            encode_html_chars=True
-                            ).encode(cls.encoding)[offset:]
+        return orjson.dumps(data)[offset:]
 
     @classmethod
     async def decode(cls, data: bytes, headers) -> Union[dict, Json]:
@@ -123,10 +119,7 @@ class JsonCodec(BaseCodec):
             return {}
 
         try:
-            data = data.decode(cls.encoding)
-            if not data:
-                return {}
-            return ujson.decode(data)
+            return orjson.loads(data)
         except ValueError:
             raise ValueError('Failed to parse JSON from data')
 
