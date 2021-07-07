@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cats-python"
-version = "0.3.0"
+version = "0.3.1"
 description = "Cifrazia Action Transport System for Python"
 authors = ["Bogdan Parfenov <adam.brian.bright@gmail.com>"]
 license = "MIT"
@@ -37,14 +37,16 @@ python = ">=3.9, <4.0"
 sentry-sdk = "^1.1.0"
 tornado = "^6.1"
 ujson = "^4.0.2"
+pytz = "^2021.1"
 Django = { version = ">=2.0, <3.0", optional = true }
 djangorestframework = { version = ">=3.12.4", optional = true }
 pydantic = { version = ">=1.8.2", optional = true }
-pytz = "^2021.1"
+djantic = { version = ">=0.3.3", optional = true }
 
 [tool.poetry.extras]
 django = ["Django", "djangorestframework"]
 pydantic = ["pydantic"]
+djantic = ["djantic"]
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.4"

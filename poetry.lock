@@ -75,6 +75,14 @@ python-versions = ">=3.5"
 django = ">=2.2"
 
 [[package]]
+name = "djantic"
+version = "0.3.3"
+description = "Pydantic model support for Django ORM"
+category = "main"
+optional = true
+python-versions = ">=3.7"
+
+[[package]]
 name = "iniconfig"
 version = "1.1.1"
 description = "iniconfig: brain-dead simple config-ini parsing"
@@ -290,12 +298,13 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 
 [extras]
 django = ["Django", "djangorestframework"]
+djantic = ["djantic"]
 pydantic = ["pydantic"]
 
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.9, <4.0"
-content-hash = "981cb6d5f38d10a613520c19e175339d39e6249f7ff929965d5ec56ba88fe30f"
+content-hash = "8ef502b543bd594407acaf33316c9cb4c53ff097e5928629aac870ee9a0de796"
 
 [metadata.files]
 atomicwrites = [
@@ -375,6 +384,10 @@ django = [
 djangorestframework = [
     { file = "djangorestframework-3.12.4-py3-none-any.whl", hash = "sha256:6d1d59f623a5ad0509fe0d6bfe93cbdfe17b8116ebc8eda86d45f6e16e819aaf" },
     { file = "djangorestframework-3.12.4.tar.gz", hash = "sha256:f747949a8ddac876e879190df194b925c177cdeb725a099db1460872f7c0a7f2" },
+]
+djantic = [
+    { file = "djantic-0.3.3-py3-none-any.whl", hash = "sha256:46f6bc4fc978876eb24843143b56d1985be86f61e74eaa59f89fc4864f501573" },
+    { file = "djantic-0.3.3.tar.gz", hash = "sha256:7d338460b5caa86602b6f5303afaa944498555071b6d09156b4c4ce36373be06" },
 ]
 iniconfig = [
     { file = "iniconfig-1.1.1-py2.py3-none-any.whl", hash = "sha256:011e24c64b7f47f6ebd835bb12a743f2fbe9a26d4cecaa7f53bc4f35ee9da8b3" },

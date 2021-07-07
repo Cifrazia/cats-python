@@ -6,6 +6,19 @@ from pydantic import BaseModel, Field
 from cats.codecs import T_BYTE
 from cats.server import Action, Api, Handler, StreamAction
 
+__all__ = [
+    'api',
+    'EchoHandler',
+    'VoidHandler',
+    'VersionedHandler',
+    'VersionedHandler2',
+    'VersionedHandler3',
+    'DelayedHandler',
+    'InputHandler',
+    'InputJSONHandler',
+    'JsonFormHandler',
+]
+
 api = Api()
 
 

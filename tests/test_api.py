@@ -9,12 +9,13 @@ from cats.codecs import FileInfo
 from cats.server import Action, Connection, InputAction, StreamAction
 from cats.utils import tmp_file
 from tests.utils import init_cats_conn
+from .handlers import *
 
 
 @mark.asyncio
 async def test_echo_handler(cats_conn: Connection):
     payload = os.urandom(10)
-    await cats_conn.send(0, payload)
+    await cats_conn.send(EchoHandler.handler_id, payload)
     response = await cats_conn.recv()
     assert response.data == payload
 
@@ -22,7 +23,7 @@ async def test_echo_handler(cats_conn: Connection):
 @mark.asyncio
 async def test_echo_handler_files(cats_conn: Connection):
     payload = tmp_file()
-    await cats_conn.send(0, payload)
+    await cats_conn.send(EchoHandler.handler_id, payload)
     response = await cats_conn.recv()
     assert isinstance(response.data, dict)
     for key, val in response.data.items():
@@ -33,7 +34,7 @@ async def test_echo_handler_files(cats_conn: Connection):
 @mark.asyncio
 async def test_no_response(cats_conn: Connection):
     payload = os.urandom(10)
-    await cats_conn.send(1, payload)
+    await cats_conn.send(VoidHandler.handler_id, payload)
     with raises(asyncio.TimeoutError):
         await asyncio.wait_for(cats_conn.recv(), 0.2)
 
@@ -53,7 +54,7 @@ async def test_api_version(cats_client_stream: IOStream, cats_server, api_versio
     conn = await init_cats_conn(cats_client_stream, '127.0.0.1',
                                 cats_server.port, cats_server.app,
                                 api_version, cats_server.handshake)
-    await conn.send(2, b'')
+    await conn.send(VersionedHandler.handler_id, b'')
 
     if handler_version is not None:
         response = await conn.recv()
@@ -65,7 +66,7 @@ async def test_api_version(cats_client_stream: IOStream, cats_server, api_versio
 
 @mark.asyncio
 async def test_api_stream(cats_conn: Connection):
-    await cats_conn.send(0xFFFF, None)
+    await cats_conn.send(DelayedHandler.handler_id, None)
     result = await cats_conn.recv()
     assert isinstance(result, StreamAction)
     assert result.data == b'hello world!'
@@ -77,7 +78,7 @@ async def test_api_stream(cats_conn: Connection):
 ])
 @mark.asyncio
 async def test_api_internal_request(cats_conn: Connection, reply, result):
-    await cats_conn.send(0xFFA0, None)
+    await cats_conn.send(InputHandler.handler_id, None)
     response = await cats_conn.recv()
     assert isinstance(response, InputAction)
     assert response.data == b'Are you ok?'
@@ -93,7 +94,7 @@ async def test_api_internal_request(cats_conn: Connection, reply, result):
 ])
 @mark.asyncio
 async def test_api_internal_json_request(cats_conn: Connection, reply, result):
-    await cats_conn.send(0xFFA1, None)
+    await cats_conn.send(InputJSONHandler.handler_id, None)
     response = await cats_conn.recv()
     assert isinstance(response, InputAction)
     assert response.data == 'Are you ok?'
@@ -105,7 +106,7 @@ async def test_api_internal_json_request(cats_conn: Connection, reply, result):
 
 @mark.asyncio
 async def test_api_json_validation(cats_conn: Connection):
-    await cats_conn.send(0xFFB0, {'id': 5, 'name': 'adam'})
+    await cats_conn.send(JsonFormHandler.handler_id, {'id': 5, 'name': 'adam'})
     response = await cats_conn.recv()
     assert isinstance(response, Action)
 
@@ -117,7 +118,7 @@ async def test_api_json_validation(cats_conn: Connection):
 
 @mark.asyncio
 async def test_api_json_invalid(cats_conn: Connection):
-    await cats_conn.send(0xFFB0, 'not even a dict')
+    await cats_conn.send(JsonFormHandler.handler_id, 'not even a dict')
     res = await cats_conn.recv()
     assert isinstance(res, Action)
     assert res.status == 500
@@ -127,7 +128,7 @@ async def test_api_json_invalid(cats_conn: Connection):
 async def test_api_speed_limiter(cats_conn: Connection):
     payload = os.urandom(100_000)
 
-    await cats_conn.send(0x0000, payload)
+    await cats_conn.send(EchoHandler.handler_id, payload)
     start = time()
     res = await cats_conn.recv()
     assert 0 <= time() - start <= 0.5
@@ -135,7 +136,7 @@ async def test_api_speed_limiter(cats_conn: Connection):
 
     await cats_conn.set_download_speed(50_000)
 
-    await cats_conn.send(0x0000, payload)
+    await cats_conn.send(EchoHandler.handler_id, payload)
     start = time()
     res = await cats_conn.recv()
     assert 1 <= time() - start <= 2.0
@@ -145,7 +146,7 @@ async def test_api_speed_limiter(cats_conn: Connection):
 @mark.asyncio
 async def test_api_payload_offset(cats_conn: Connection):
     payload = os.urandom(10)
-    await cats_conn.send(0, payload, headers={"Offset": 5})
+    await cats_conn.send(EchoHandler.handler_id, payload, headers={"Offset": 5})
     response = await cats_conn.recv()
     assert response.data == b''
 
@@ -156,7 +157,7 @@ async def test_api_payload_offset_files(cats_conn: Connection):
     with payload.open('wb') as fh:
         fh.write(b'1234567890')
 
-    await cats_conn.send(0, payload, headers={"Offset": 5})
+    await cats_conn.send(EchoHandler.handler_id, payload, headers={"Offset": 5})
     response = await cats_conn.recv()
     assert isinstance(response.data, dict)
     for key, val in response.data.items():
@@ -168,7 +169,7 @@ async def test_api_payload_offset_files(cats_conn: Connection):
 
 @mark.asyncio
 async def test_cancel_input(cats_conn: Connection):
-    await cats_conn.send(0xFFA0, None)
+    await cats_conn.send(InputHandler.handler_id, None)
     response = await cats_conn.recv()
     assert isinstance(response, InputAction)
     assert response.data == b'Are you ok?'

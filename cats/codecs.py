@@ -6,6 +6,7 @@ from typing import Any, IO, Optional, Union
 
 import ujson
 
+from cats.plugins import BaseModel, BaseSerializer
 from cats.types import Byte, Json, T_Headers
 from cats.utils import tmp_file
 
@@ -82,13 +83,32 @@ class ByteCodec(BaseCodec):
         return bytes(data) if data else bytes()
 
 
+JSON = Union[Json, BaseModel, BaseSerializer]
+
+
 class JsonCodec(BaseCodec):
     type_id = 0x01
     type_name = 'json'
     encoding = 'utf-8'
 
     @classmethod
-    async def encode(cls, data: Json, headers: T_Headers, offset: int = 0) -> bytes:
+    async def encode(cls, data: JSON, headers: T_Headers, offset: int = 0) -> bytes:
+        if isinstance(data, (list, tuple, set)):
+            data = [cls._convert(i) for i in data]
+        else:
+            data = cls._convert(data)
+        return await cls._encode(data, headers=headers, offset=offset)
+
+    @classmethod
+    def _convert(cls, data: JSON):
+        if isinstance(data, BaseSerializer):
+            return data.data
+        elif isinstance(data, BaseModel):
+            return data.dict()
+        return data
+
+    @classmethod
+    async def _encode(cls, data: Json, headers: T_Headers, offset: int = 0) -> bytes:
         if not isinstance(data, (str, int, float, dict, list, bool, type(None))):
             raise TypeError(f'{cls.__name__} does not support {type(data).__name__}')
 
@@ -98,7 +118,7 @@ class JsonCodec(BaseCodec):
                             ).encode(cls.encoding)[offset:]
 
     @classmethod
-    async def decode(cls, data: bytes, headers) -> Json:
+    async def decode(cls, data: bytes, headers) -> Union[dict, Json]:
         if not data:
             return {}
 
