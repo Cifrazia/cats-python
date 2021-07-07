@@ -2,4 +2,4 @@ from .errors import *
 from .handshake import *
 from .identity import *
 
-version = "0.2.3"
+version = "0.3.0"

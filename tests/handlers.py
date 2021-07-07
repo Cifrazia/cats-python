@@ -1,8 +1,7 @@
 import os
 from asyncio import sleep
 
-from rest_framework.fields import CharField, IntegerField
-from rest_framework.serializers import Serializer
+from pydantic import BaseModel, Field
 
 from cats.codecs import T_BYTE
 from cats.server import Action, Api, Handler, StreamAction
@@ -66,13 +65,13 @@ class InputJSONHandler(Handler, api=api, id=0xFFA1, name='internal json requests
 
 
 class JsonFormHandler(Handler, api=api, id=0xFFB0):
-    class Loader(Serializer):
-        id = IntegerField(min_value=0, max_value=10)
-        name = CharField(min_length=3, max_length=16)
+    class Loader(BaseModel):
+        id: int = Field(ge=0, le=10)
+        name: str = Field(min_length=3, max_length=16)
 
-    class Dumper(Serializer):
-        token = CharField(min_length=64, max_length=64)
-        code = CharField(min_length=6, max_length=6)
+    class Dumper(BaseModel):
+        token: str = Field(min_length=64, max_length=64)
+        code: str = Field(min_length=6, max_length=6)
 
     async def handle(self):
         user = await self.json_load()

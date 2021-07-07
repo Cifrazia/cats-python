@@ -11,7 +11,7 @@ import ujson
 
 from cats.codecs import T_FILE, T_JSON
 from cats.identity import Identity, IdentityChild
-from cats.plugins import BaseSerializer, QuerySet
+from cats.plugins import Form, QuerySet, Scheme, SchemeTypes, scheme_dump, scheme_load
 from cats.server.action import Action, BaseAction, InputAction
 from cats.types import Headers, Json
 
@@ -88,8 +88,8 @@ class Api:
 class Handler:
     handler_id: int
 
-    Loader: Optional[Type[BaseSerializer]] = None
-    Dumper: Optional[Type[BaseSerializer]] = None
+    Loader: Optional[Scheme] = None
+    Dumper: Optional[Scheme] = None
 
     data_type: Optional[Union[int, tuple[int]]] = None
     min_data_len: Optional[int] = None
@@ -117,10 +117,10 @@ class Handler:
 
         assert id is not None
 
-        assert cls.Loader is None or (isinstance(cls.Loader, type) and issubclass(cls.Loader, BaseSerializer)), \
-            'Handler Loader must be subclass of rest_framework.serializers.BaseSerializer'
-        assert cls.Dumper is None or (isinstance(cls.Dumper, type) and issubclass(cls.Dumper, BaseSerializer)), \
-            'Handler Dumper must be subclass of rest_framework.serializers.BaseSerializer'
+        assert cls.Loader is None or (isinstance(cls.Loader, type) and issubclass(cls.Loader, SchemeTypes)), \
+            'Handler.Loader must be subclass of BaseSerializer | BaseModel'
+        assert cls.Dumper is None or (isinstance(cls.Dumper, type) and issubclass(cls.Dumper, SchemeTypes)), \
+            'Handler.Dumper must be subclass of BaseSerializer | BaseModel'
 
         assert not (cls.require_auth is False and cls.require_models is not None), \
             f'{cls!s}.require_auth is False and {cls!s}.require_models is not None'
@@ -131,7 +131,7 @@ class Handler:
     async def __call__(self) -> Optional[BaseAction]:
         st = time()
         res = await self.prepare()
-        if res is None:
+        if not isinstance(res, BaseAction):
             res = await self.handle()
         if self.fix_exec_time is not None:
             sp = time() - st
@@ -157,7 +157,7 @@ class Handler:
     async def handle(self):
         raise NotImplementedError
 
-    async def json_load(self, *, many: bool = False) -> Json:
+    async def json_load(self, *, many: bool = False, plain: bool = False) -> Union[Json, Form]:
         if self.action.data_type != T_JSON:
             raise TypeError('Unsupported data type. Expected JSON')
 
@@ -166,17 +166,14 @@ class Handler:
             return data
         if many is None:
             many = isinstance(data, list)
-        form = self.Loader(data=data, many=many)
-        form.is_valid(raise_exception=True)
-        return form.validated_data
+        return scheme_load(self.Loader, data, many=many, plain=plain)
 
     async def json_dump(self, data, *, headers: T_Headers = None,
-                        status: int = 200, many: bool = None) -> Action:
-        if many is None:
-            many = isinstance(data, (list, tuple, set, QuerySet, GeneratorType))
-
+                        status: int = 200, many: bool = None, plain: bool = False) -> Action:
         if self.Dumper is not None:
-            data = self.Dumper(data, many=many).data
+            if not plain and many is None:
+                many = isinstance(data, (list, tuple, set, QuerySet, GeneratorType))
+            data = scheme_dump(self.Dumper, data, many=many, plain=plain)
         else:
             ujson.encode(data)
 
