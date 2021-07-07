@@ -6,7 +6,7 @@ from typing import Any, IO, Optional, Union
 
 import orjson
 
-from cats.plugins import Form, SchemeTypes, scheme_json
+from cats.plugins import BaseModel, BaseSerializer, Form, ModelSchema, scheme_json
 from cats.types import Byte, Json, List, T_Headers
 from cats.utils import tmp_file
 
@@ -92,24 +92,17 @@ class JsonCodec(BaseCodec):
 
     @classmethod
     async def encode(cls, data: JSON, headers: T_Headers, offset: int = 0) -> bytes:
-        print(f'######## ENCODE JSON ######### {data = } {headers = } {offset = }')
         if data:
-            print(f'######## ENCODE DATA #########', type(data))
-            if isinstance(data, SchemeTypes):
-                print(f'######## ENCODE SCHEME #########')
+            if isinstance(data, (BaseModel, BaseSerializer, ModelSchema)):
                 return scheme_json(type(data), data, many=False, plain=True)
             elif isinstance(data, List):
-                print(f'######## ENCODE LIST #########')
                 data = list(data)
-                if isinstance(data[0], SchemeTypes):
-                    print(f'######## ENCODE LIST SCHEME #########')
+                if isinstance(data[0], (BaseModel, BaseSerializer, ModelSchema)):
                     return scheme_json(type(data[0]), data, many=True, plain=True)
-        print(f'######## ENCODE SKIP #########')
         return await cls._encode(data, offset=offset)
 
     @classmethod
     async def _encode(cls, data: Json, offset: int = 0) -> bytes:
-        print(f'######## SUB ENCODE JSON ######### {data = } {offset = }')
         if not isinstance(data, (str, int, float, dict, list, bool, type(None))):
             raise TypeError(f'{cls.__name__} does not support {type(data).__name__}')
 

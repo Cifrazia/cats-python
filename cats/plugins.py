@@ -24,6 +24,7 @@ __all__ = [
     'Model',
     'BaseSerializer',
     'BaseModel',
+    'ModelSchema',
     'Scheme',
     'SchemeTypes',
     'Form',

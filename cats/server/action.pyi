@@ -92,13 +92,15 @@ class BaseAction(dict):
 
 
 class BasicAction(BaseAction):
-    __slots__ = ('data_len', 'data_type', 'compression')
+    __slots__ = ('data_len', 'data_type', 'compression', 'encoded')
 
     def __init__(self, data: Any = None, *, headers: T_Headers = None, status: int = None,
-                 message_id: int = None, data_len: int = None, data_type: int = None, compression: int = None):
+                 message_id: int = None, data_len: int = None, data_type: int = None, compression: int = None,
+                 encoded: int = None):
         self.data_len: Optional[int] = data_len
         self.data_type: Optional[int] = data_type
         self.compression: Optional[int] = compression
+        self.encoded: Optional[int] = encoded
         super().__init__(data, headers=headers, status=status, message_id=message_id)
 
     async def recv_data(self) -> None: ...
@@ -129,11 +131,11 @@ class Action(BasicAction):
 
     def __init__(self, data: Any = None, *, headers: T_Headers = None, status: int = None, message_id: int = None,
                  handler_id: int = None, data_len: int = None, data_type: int = None, compression: int = None,
-                 send_time: float = None):
+                 send_time: float = None, encoded: int = None):
         self.handler_id: Optional[int] = handler_id
         self.send_time = send_time or (time_ns() // 1000000)
         super().__init__(data, headers=headers, status=status, message_id=message_id,
-                         data_len=data_len, data_type=data_type, compression=compression)
+                         data_len=data_len, data_type=data_type, compression=compression, encoded=encoded)
 
     @classmethod
     async def init(cls, conn: Connection) -> 'Action': ...

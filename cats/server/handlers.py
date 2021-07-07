@@ -8,7 +8,7 @@ from typing import Any, Awaitable, DefaultDict, Optional, Type, Union
 
 from cats.codecs import T_FILE, T_JSON
 from cats.identity import Identity, IdentityChild
-from cats.plugins import Form, Scheme, SchemeTypes, scheme_load
+from cats.plugins import Form, Scheme, SchemeTypes, scheme_json, scheme_load
 from cats.server.action import Action, BaseAction, InputAction
 from cats.types import Headers, Json, List
 
@@ -171,7 +171,8 @@ class Handler:
             if not plain:
                 if many is None:
                     many = isinstance(data, List)
-                data = scheme_load(self.Dumper, data, many=many, plain=True)
+                data = scheme_json(self.Dumper, data, many=many, plain=False)
+                return Action(data=data, headers=headers, status=status, encoded=T_JSON)
             elif not isinstance(data, self.Dumper):
                 raise TypeError('Resulted plain data does not match Dumper')
         return Action(data=data, headers=headers, status=status)

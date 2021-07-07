@@ -179,13 +179,14 @@ class BaseAction(dict):
 
 
 class BasicAction(BaseAction, abstract=True):
-    __slots__ = ('data_len', 'data_type', 'compression')
+    __slots__ = ('data_len', 'data_type', 'compression', 'encoded')
 
     def __init__(self, data=None, *, headers=None, status=None,
-                 message_id=None, data_len=None, data_type=None, compression=None):
+                 message_id=None, data_len=None, data_type=None, compression=None, encoded=None):
         self.data_len = data_len
         self.data_type = data_type
         self.compression = compression
+        self.encoded = encoded
         super().__init__(data, headers=headers, status=status, message_id=message_id)
 
     @classmethod
@@ -252,7 +253,11 @@ class BasicAction(BaseAction, abstract=True):
         return chunk, left
 
     async def _encode(self):
-        data, data_type = await Codec.encode(self.data, self.headers, self.offset)
+        if self.encoded is None:
+            data, data_type = await Codec.encode(self.data, self.headers, self.offset)
+        else:
+            data = self.data
+            data_type = self.encoded
         if isinstance(data, Path):
             data, buff = tmp_file(), data
             compression = await Compressor.compress_file(buff, data, self.headers, self.compression)
@@ -304,14 +309,14 @@ class Action(BasicAction):
 
     def __init__(self, data=None, *, headers=None, status=None, message_id=None,
                  handler_id=None, data_len=None, data_type=None, compression=None,
-                 send_time=None):
+                 send_time=None, encoded=None):
         assert compression is None or isinstance(compression, int), 'Invalid compression type'
         assert data_type is None or isinstance(data_type, int), 'Invalid data type provided'
 
         self.handler_id = handler_id
         self.send_time = send_time or (time_ns() // 1000000)
         super().__init__(data, headers=headers, status=status, message_id=message_id,
-                         data_len=data_len, data_type=data_type, compression=compression)
+                         data_len=data_len, data_type=data_type, compression=compression, encoded=encoded)
 
     @classmethod
     async def init(cls, conn):

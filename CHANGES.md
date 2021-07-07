@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.5 (2021-07-07)
+
++ Fixed invalid typing
++ Fixed `Handler.json_dump` invalid encoding
++ Added `encoded: int = None` argument to `Action`, `InputAction` classes
++ Removed redundant prints
+
 ## 0.3.4 (2021-07-07)
 
 + Added `MISSING = Missing()` placeholder for missing values
