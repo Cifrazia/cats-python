@@ -1,9 +1,11 @@
 from pathlib import Path
+from types import GeneratorType
 from typing import Any, AsyncIterable, Iterable, Type, Union
 
 import orjson
 
 from cats.errors import ProtocolError
+from cats.plugins import QuerySet
 
 __all__ = [
     'Bytes',
@@ -14,6 +16,7 @@ __all__ = [
     'Byte',
     'Json',
     'File',
+    'List',
     'T_Headers',
     'Headers',
 ]
@@ -27,6 +30,7 @@ NULL = type('NULL', (object,), {})
 Byte = Bytes
 Json = Union[str, int, float, dict, list, bool, type(None), Type[NULL]]
 File = Union[Path, str]
+List = (list, tuple, set, GeneratorType, QuerySet)
 
 T_Headers = Union[dict[str, Any], 'Headers']
 

@@ -1,9 +1,19 @@
 # Changelog
 
-## 0.3.1 (2021-07-07)
+## 0.3.3 (2021-07-07)
+
++ Replaced `ujson` package with `orjson`
++ Added scheme support in `JsonCodec.encode`
++ Method `Handler.json_dump` now uses scheme object instead of dict if `Dumper` provided
+
+## 0.3.2 (2021-07-07)
 
 + Added `BaseSerializer` _(DRF)_ and `BaseModel` _(pydantic)_ support for `JsonCodec.encode`
 + Added `djantic` _(Django models for `pydatic`)_ models support
+
+## 0.3.1 (2021-07-07)
+
++ skipped due to bug with pypi
 
 ## 0.3.0 (2021-07-07)
 

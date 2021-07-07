@@ -50,9 +50,9 @@ class VersionedHandler3(Handler, api=api, id=0x0002, version=6):
 class DelayedHandler(Handler, api=api, id=0xFFFF, name='delayed response'):
     async def gen(self):
         yield b'hello'
-        await sleep(0.1)
+        await sleep(0.01)
         yield b' world'
-        await sleep(0.1)
+        await sleep(0.01)
         yield b'!'
 
     async def handle(self):

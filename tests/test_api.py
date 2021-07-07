@@ -36,7 +36,7 @@ async def test_no_response(cats_conn: Connection):
     payload = os.urandom(10)
     await cats_conn.send(VoidHandler.handler_id, payload)
     with raises(asyncio.TimeoutError):
-        await asyncio.wait_for(cats_conn.recv(), 0.2)
+        await asyncio.wait_for(cats_conn.recv(), 0.1)
 
 
 @mark.parametrize('api_version, handler_version', [
@@ -134,12 +134,12 @@ async def test_api_speed_limiter(cats_conn: Connection):
     assert 0 <= time() - start <= 0.5
     assert res.data == payload
 
-    await cats_conn.set_download_speed(50_000)
+    await cats_conn.set_download_speed(100_000)
 
     await cats_conn.send(EchoHandler.handler_id, payload)
     start = time()
     res = await cats_conn.recv()
-    assert 1 <= time() - start <= 2.0
+    assert 0.5 <= time() - start <= 1.5
     assert res.data == payload
 
 

@@ -6,8 +6,8 @@ from typing import Any, IO, Optional, Union
 
 import orjson
 
-from cats.plugins import BaseModel, BaseSerializer
-from cats.types import Byte, Json, T_Headers
+from cats.plugins import Form, SchemeTypes, scheme_json
+from cats.types import Byte, Json, List, T_Headers
 from cats.utils import tmp_file
 
 __all__ = [
@@ -83,7 +83,7 @@ class ByteCodec(BaseCodec):
         return bytes(data) if data else bytes()
 
 
-JSON = Union[Json, BaseModel, BaseSerializer]
+JSON = Union[Json, Form, list[Form]]
 
 
 class JsonCodec(BaseCodec):
@@ -92,22 +92,24 @@ class JsonCodec(BaseCodec):
 
     @classmethod
     async def encode(cls, data: JSON, headers: T_Headers, offset: int = 0) -> bytes:
-        if isinstance(data, (list, tuple, set)):
-            data = [cls._convert(i) for i in data]
-        else:
-            data = cls._convert(data)
+        print(f'######## ENCODE JSON ######### {data = } {headers = } {offset = }')
+        if data:
+            print(f'######## ENCODE DATA #########', type(data))
+            if isinstance(data, SchemeTypes):
+                print(f'######## ENCODE SCHEME #########')
+                return scheme_json(type(data), data, many=False, plain=True)
+            elif isinstance(data, List):
+                print(f'######## ENCODE LIST #########')
+                data = list(data)
+                if isinstance(data[0], SchemeTypes):
+                    print(f'######## ENCODE LIST SCHEME #########')
+                    return scheme_json(type(data[0]), data, many=True, plain=True)
+        print(f'######## ENCODE SKIP #########')
         return await cls._encode(data, offset=offset)
 
     @classmethod
-    def _convert(cls, data: JSON):
-        if isinstance(data, BaseSerializer):
-            return data.data
-        elif isinstance(data, BaseModel):
-            return data.dict()
-        return data
-
-    @classmethod
     async def _encode(cls, data: Json, offset: int = 0) -> bytes:
+        print(f'######## SUB ENCODE JSON ######### {data = } {offset = }')
         if not isinstance(data, (str, int, float, dict, list, bool, type(None))):
             raise TypeError(f'{cls.__name__} does not support {type(data).__name__}')
 

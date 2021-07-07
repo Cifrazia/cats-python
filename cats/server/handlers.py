@@ -4,14 +4,13 @@ from dataclasses import dataclass
 from logging import getLogger
 from random import random
 from time import time
-from types import GeneratorType
 from typing import Any, Awaitable, DefaultDict, Optional, Type, Union
 
 from cats.codecs import T_FILE, T_JSON
 from cats.identity import Identity, IdentityChild
-from cats.plugins import Form, QuerySet, Scheme, SchemeTypes, scheme_dump, scheme_load
+from cats.plugins import Form, Scheme, SchemeTypes, scheme_dump, scheme_load
 from cats.server.action import Action, BaseAction, InputAction
-from cats.types import Headers, Json
+from cats.types import Headers, Json, List
 
 __all__ = [
     'HandlerItem',
@@ -163,16 +162,18 @@ class Handler:
         if self.Loader is None:
             return data
         if many is None:
-            many = isinstance(data, list)
+            many = isinstance(data, List)
         return scheme_load(self.Loader, data, many=many, plain=plain)
 
     async def json_dump(self, data, *, headers: T_Headers = None,
                         status: int = 200, many: bool = None, plain: bool = False) -> Action:
         if self.Dumper is not None:
-            if not plain and many is None:
-                many = isinstance(data, (list, tuple, set, QuerySet, GeneratorType))
-            data = scheme_dump(self.Dumper, data, many=many, plain=plain)
-
+            if not plain:
+                if many is None:
+                    many = isinstance(data, List)
+                data = scheme_load(self.Dumper, data, many=many, plain=True)
+            elif not isinstance(data, self.Dumper):
+                raise TypeError('Resulted plain data does not match Dumper')
         return Action(data=data, headers=headers, status=status)
 
     @property

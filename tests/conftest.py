@@ -39,8 +39,7 @@ def cats_middleware() -> List[cats.server.middleware.Middleware]:
 
 @fixture(scope='session')
 def cats_app(cats_api_list, cats_middleware) -> cats.server.Application:
-    app = cats.server.Application(cats_api_list, cats_middleware)
-    return app
+    return cats.server.Application(cats_api_list, cats_middleware)
 
 
 @fixture(scope='session')
