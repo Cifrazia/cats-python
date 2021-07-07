@@ -183,7 +183,7 @@ def filter_json(json: Json, max_len: int = 16, max_size: int = 64, indent: bool 
     option = 0
     if indent:
         option |= orjson.OPT_INDENT_2
-    if isinstance(json, (str, bytes, bytearray, memoryview)):
+    if isinstance(json, (bytes, bytearray, memoryview)):
         json = orjson.loads(json)
     return orjson.dumps(f_json(json, max_len, max_size), option=option).decode('utf-8')
 
