@@ -46,7 +46,7 @@ djantic = { version = ">=0.3.3", optional = true }
 [tool.poetry.extras]
 django = ["Django", "djangorestframework"]
 pydantic = ["pydantic"]
-djantic = ["djantic"]
+djantic = ["djantic", "pydantic", "Django"]
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.4"
