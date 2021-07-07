@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.4 (2021-07-07)
+
++ Added `MISSING = Missing()` placeholder for missing values
++ Function `scheme_load` now removes keys where values are `MISSING`
++ Type `Form` now uses `TypeVar` so every subclass objects will still be matched
+
 ## 0.3.3 (2021-07-07)
 
 + Replaced `ujson` package with `orjson`

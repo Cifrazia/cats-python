@@ -5,7 +5,12 @@ from typing import Any, AsyncIterable, Iterable, Type, Union
 import orjson
 
 from cats.errors import ProtocolError
-from cats.plugins import QuerySet
+
+try:
+    from django.db.models import QuerySet, Model
+except ImportError:
+    QuerySet = type('QuerySet', (list,), {})
+    Model = type('Model', (list,), {})
 
 __all__ = [
     'Bytes',
@@ -17,6 +22,10 @@ __all__ = [
     'Json',
     'File',
     'List',
+    'Missing',
+    'MISSING',
+    'QuerySet',
+    'Model',
     'T_Headers',
     'Headers',
 ]
@@ -33,6 +42,14 @@ File = Union[Path, str]
 List = (list, tuple, set, GeneratorType, QuerySet)
 
 T_Headers = Union[dict[str, Any], 'Headers']
+
+
+class Missing:
+    def __bool__(self):
+        return False
+
+
+MISSING = Missing
 
 
 class Headers(dict):

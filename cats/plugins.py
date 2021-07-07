@@ -1,12 +1,8 @@
-from typing import Type, Union
+from typing import Type, TypeVar, Union
 
 import orjson
 
-try:
-    from django.db.models import QuerySet, Model
-except ImportError:
-    QuerySet = type('QuerySet', (list,), {})
-    Model = type('Model', (list,), {})
+from cats.types import MISSING, Model, QuerySet
 
 try:
     from rest_framework.serializers import BaseSerializer
@@ -25,6 +21,7 @@ except ImportError:
 
 __all__ = [
     'QuerySet',
+    'Model',
     'BaseSerializer',
     'BaseModel',
     'Scheme',
@@ -37,7 +34,10 @@ __all__ = [
 
 Scheme = Union[Type[BaseModel], Type[BaseSerializer], Type[ModelSchema]]
 SchemeTypes = (BaseModel, BaseSerializer, ModelSchema)
-Form = Union[BaseModel, BaseSerializer, ModelSchema]
+PydanticModel = TypeVar('PydanticModel', bound=BaseModel)
+DRFModel = TypeVar('DRFModel', bound=BaseSerializer)
+DjanticModel = TypeVar('DjanticModel', bound=ModelSchema)
+Form = Union[PydanticModel, DRFModel, DjanticModel]
 
 
 class DRF:
@@ -45,7 +45,9 @@ class DRF:
     def load(cls, s: Type[BaseSerializer], data, *, many: bool = False, plain: bool = False):
         f = s(data=data, many=many)
         f.is_valid(raise_exception=True)
-        return f if plain else f.validated_data
+        if plain:
+            return f
+        return {k: v for k, v in f.validated_data.items() if v is not MISSING}
 
     @classmethod
     def dump(cls, s: Type[BaseSerializer], data, *, many: bool = False, plain: bool = False):
@@ -66,7 +68,10 @@ class Pydantic:
             return [cls.load(s, i, many=False, plain=plain) for i in data]
 
         res = s.parse_obj(data)
-        return res if plain else res.dict()
+        if plain:
+            return res
+
+        return {k: v for k, v in res.dict().items() if v is not MISSING}
 
     @classmethod
     def dump(cls, s: Type[BaseModel], data, *, many: bool = False, plain: bool = False):
