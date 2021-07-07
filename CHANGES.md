@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.6 (2021-07-07)
+
++ Fix connection crash when `encoded` argument provided to `Action`
+
 ## 0.3.5 (2021-07-07)
 
 + Fixed invalid typing
