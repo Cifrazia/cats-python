@@ -151,7 +151,7 @@ class Connection:
         raise ProtocolError(f'Handler with id {handler_id} not found')
 
     async def ping(self):
-        if self._app.idle_timeout is None:
+        if not self._app.idle_timeout:
             return
         wait = max(0.1, round(self._app.idle_timeout / 2, 2))
         pong = PingAction()

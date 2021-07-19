@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.7 (2021-07-19)
+
++ Fixed crash when `idle_timeout` is set to `None`
++ Fixed `idle_timeout` not working properly when set to `0`
+
 ## 0.3.6 (2021-07-07)
 
 + Fix connection crash when `encoded` argument provided to `Action`

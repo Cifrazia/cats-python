@@ -23,8 +23,8 @@ class Application:
 
         self._middleware = middleware
         self._channels: DefaultDict[str, list[Connection]] = defaultdict(list)
-        self.idle_timeout = idle_timeout or 0
-        self.input_timeout = input_timeout or 0
+        self.idle_timeout: Union[int, float] = idle_timeout or 0
+        self.input_timeout: Union[int, float] = input_timeout or 0
 
         api = Api()
         for i in apis:
