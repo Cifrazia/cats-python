@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.8 (2021-07-20)
+
++ Fixed invalid missing handler
+
 ## 0.3.7 (2021-07-19)
 
 + Fixed crash when `idle_timeout` is set to `None`

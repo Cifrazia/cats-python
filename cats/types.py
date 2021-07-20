@@ -44,12 +44,12 @@ List = (list, tuple, set, GeneratorType, QuerySet)
 T_Headers = Union[dict[str, Any], 'Headers']
 
 
-class Missing:
+class Missing(str):
     def __bool__(self):
         return False
 
 
-MISSING = Missing
+MISSING = Missing()
 
 
 class Headers(dict):
