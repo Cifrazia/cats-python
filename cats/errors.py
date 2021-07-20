@@ -1,14 +1,14 @@
 class ProtocolError(ValueError, OSError):
-    pass
+    __slots__ = ()
 
 
 class CodecError(ValueError):
-    pass
+    __slots__ = ()
 
 
 class MalformedDataError(ValueError):
-    pass
+    __slots__ = ()
 
 
 class HandshakeError(ValueError):
-    pass
+    __slots__ = ()

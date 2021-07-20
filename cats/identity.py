@@ -22,6 +22,7 @@ class IdentityMeta(type):
 
 
 class Identity(metaclass=IdentityMeta):
+    __slots__ = ()
     id: int
     model_name: str
 

@@ -11,6 +11,8 @@ class IdentityMeta(type):
 
 
 class Identity(metaclass=IdentityMeta):
+    __slots__ = ()
+
     @property
     def id(self) -> int:
         raise NotImplementedError

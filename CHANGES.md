@@ -1,8 +1,9 @@
 # Changelog
 
-## 0.3.9 (2021-07-20)
+## 0.3.10 (2021-07-20)
 
 + Fixed invalid missing handler
++ Added `__slots__` for remaining classes
 
 ## 0.3.7 (2021-07-19)
 

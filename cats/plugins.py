@@ -2,7 +2,7 @@ from typing import Type, TypeVar, Union
 
 import orjson
 
-from cats.types import MISSING, Model, QuerySet
+from cats.types import Missing, Model, QuerySet
 
 try:
     from rest_framework.serializers import BaseSerializer
@@ -48,7 +48,7 @@ class DRF:
         f.is_valid(raise_exception=True)
         if plain:
             return f
-        return {k: v for k, v in f.validated_data.items() if isinstance(v, type) or not issubclass(v, MISSING)}
+        return {k: v for k, v in f.validated_data.items() if not isinstance(v, Missing)}
 
     @classmethod
     def dump(cls, s: Type[BaseSerializer], data, *, many: bool = False, plain: bool = False):
@@ -72,7 +72,7 @@ class Pydantic:
         if plain:
             return res
 
-        return {k: v for k, v in res.dict().items() if isinstance(v, type) or not issubclass(v, MISSING)}
+        return {k: v for k, v in res.dict().items() if not isinstance(v, Missing)}
 
     @classmethod
     def dump(cls, s: Type[BaseModel], data, *, many: bool = False, plain: bool = False):

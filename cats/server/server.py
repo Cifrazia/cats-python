@@ -21,6 +21,7 @@ logging = getLogger('CATS.Server')
 
 
 class Server(TCPServer):
+    __slots__ = ('app', 'handshake', 'port', 'connections', 'debug')
     CONNECTION: ConnType = Connection
 
     def __init__(self, app: Application, handshake: Handshake = None,

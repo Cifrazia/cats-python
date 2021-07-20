@@ -20,6 +20,8 @@ class Handshake:
 
 
 class SHA256TimeHandshake(Handshake):
+    __slots__ = ('secret_key', 'valid_window', 'timeout')
+
     def __init__(self, secret_key: bytes, valid_window: int = None, timeout: float = 5.0):
         assert isinstance(secret_key, bytes) and secret_key
         self.secret_key = secret_key

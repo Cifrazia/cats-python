@@ -32,6 +32,8 @@ class HandlerItem:
 
 
 class Api:
+    __slots__ = ('_handlers',)
+
     def __init__(self):
         self._handlers: DefaultDict[int, list[HandlerItem]] = defaultdict(list)
 
@@ -83,6 +85,7 @@ class Api:
 
 
 class Handler:
+    __slots__ = ('action',)
     handler_id: int
 
     Loader: Optional[Scheme] = None

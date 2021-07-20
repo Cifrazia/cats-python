@@ -45,6 +45,14 @@ T_Headers = Union[dict[str, Any], 'Headers']
 
 
 class Missing(str):
+    __slots__ = ()
+
+    def __init__(self):
+        super().__init__()
+
+    def __eq__(self, other):
+        return isinstance(other, Missing)
+
     def __bool__(self):
         return False
 
@@ -53,6 +61,8 @@ MISSING = Missing()
 
 
 class Headers(dict):
+    __slots__ = ()
+
     def __init__(self, *args, **kwargs):
         v = self._convert(*args, **kwargs)
         if (offset := v.get('offset', None)) and (not isinstance(offset, int) or offset < 0):
