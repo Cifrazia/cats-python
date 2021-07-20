@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.3.8 (2021-07-20)
+## 0.3.9 (2021-07-20)
 
 + Fixed invalid missing handler
 
