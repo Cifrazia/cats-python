@@ -28,6 +28,7 @@ __all__ = [
     'Scheme',
     'SchemeTypes',
     'Form',
+    'without_missing',
     'scheme_load',
     'scheme_dump',
     'scheme_json',
@@ -41,6 +42,16 @@ DjanticModel = TypeVar('DjanticModel', bound=ModelSchema)
 Form = Union[PydanticModel, DRFModel, DjanticModel]
 
 
+def without_missing(obj):
+    if _items := getattr(obj, 'items', None):
+        return {k: without_missing(v) for k, v in _items() if not isinstance(v, Missing)}
+    if isinstance(obj, (list, set, tuple)):
+        return [without_missing(i) for i in obj if not isinstance(i, Missing)]
+    if isinstance(obj, Missing):
+        return None
+    return obj
+
+
 class DRF:
     @classmethod
     def load(cls, s: Type[BaseSerializer], data, *, many: bool = False, plain: bool = False):
@@ -48,7 +59,7 @@ class DRF:
         f.is_valid(raise_exception=True)
         if plain:
             return f
-        return {k: v for k, v in f.validated_data.items() if not isinstance(v, Missing)}
+        return without_missing(f.validated_data)
 
     @classmethod
     def dump(cls, s: Type[BaseSerializer], data, *, many: bool = False, plain: bool = False):
@@ -72,7 +83,7 @@ class Pydantic:
         if plain:
             return res
 
-        return {k: v for k, v in res.dict().items() if not isinstance(v, Missing)}
+        return without_missing(res.dict())
 
     @classmethod
     def dump(cls, s: Type[BaseModel], data, *, many: bool = False, plain: bool = False):
