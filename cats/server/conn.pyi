@@ -1,6 +1,6 @@
 import asyncio
 from contextlib import asynccontextmanager, contextmanager
-from typing import Any, Optional, Type, TypeVar
+from typing import Any, Iterable, Optional, Type, TypeVar
 
 from sentry_sdk import Scope
 from tornado.iostream import IOStream, StreamClosedError
@@ -86,6 +86,12 @@ class Connection:
     def attach_to_channel(self, channel: str): ...
 
     def detach_from_channel(self, channel: str): ...
+
+    @property
+    def conns_with_same_identity(self) -> Iterable['Connection']: ...
+
+    @property
+    def conns_with_same_model(self) -> Iterable['Connection']: ...
 
     @property
     def identity(self) -> Optional[Identity]: ...
