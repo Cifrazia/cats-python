@@ -23,6 +23,14 @@ logging = getLogger('CATS.Server')
 class Server(TCPServer):
     __slots__ = ('app', 'handshake', 'port', 'connections', 'debug')
     CONNECTION: ConnType = Connection
+    instance: 'Server'
+
+    def __new__(cls, *args, **kwargs):
+        try:
+            return cls.instance
+        except AttributeError:
+            cls.instance = super().__new__(cls)
+            return cls.instance
 
     def __init__(self, app: Application, handshake: Handshake = None,
                  ssl_options: Optional[Union[dict[str, Any], ssl.SSLContext]] = None,

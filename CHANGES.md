@@ -7,6 +7,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.13] 2021-07-30
+
+### Added
+
++ Added `Server.instance` class attribute, that stores created instance of server
+
 ## [0.3.12] 2021-07-29
 
 ### Changed
