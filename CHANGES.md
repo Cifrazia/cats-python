@@ -7,6 +7,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.14] 2021-08-02
+
+### Fixed
+
++ Fixed `'NoneType' object has no attribute 'send_time'`
+
 ## [0.3.13] 2021-07-30
 
 ### Added

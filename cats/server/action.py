@@ -752,7 +752,7 @@ class PingAction(BaseAction):
         return action
 
     async def handle(self):
-        debug(f'Ping {self.data.send_time} [-] {self.data.recv_time}')
+        debug(f'Ping {self.send_time} [-] {self.recv_time}')
         await self.send(self.conn)
         await self.dump_data(0)
 
