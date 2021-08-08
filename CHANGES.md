@@ -7,6 +7,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.16] 2021-08-08
+
+### Added
+
++ `Action` classes now have __repr__
+
 ## [0.3.15] 2021-08-08
 
 ### Fixed

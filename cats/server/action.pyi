@@ -90,6 +90,8 @@ class BaseAction(dict):
 
     async def send(self, conn: Connection) -> None: ...
 
+    def __repr__(self) -> str: ...
+
 
 class BasicAction(BaseAction):
     __slots__ = ('data_len', 'data_type', 'compression', 'encoded')
@@ -115,6 +117,8 @@ class BasicAction(BaseAction):
 
     async def _write_data_to_stream(self, conn: Connection, data: Union[Path, bytes],
                                     data_len: int, data_type: int, compression: int) -> None: ...
+
+    def __repr__(self) -> str: ...
 
 
 class Action(BasicAction):
@@ -146,6 +150,8 @@ class Action(BasicAction):
     async def handle(self) -> None: ...
 
     async def send(self, conn: Connection) -> None: ...
+
+    def __repr__(self) -> str: ...
 
 
 class StreamAction(Action):
@@ -185,6 +191,8 @@ class StreamAction(Action):
     async def _write_data_to_stream(self, conn: Connection, data: BytesAsyncGen, *_, compression: int) -> None: ...
 
     async def _async_gen(self, gen: BytesAnyGen, chunk_size: int) -> AsyncIterator[bytes]: ...
+
+    def __repr__(self) -> str: ...
 
 
 class InputAction(BasicAction):
@@ -230,6 +238,8 @@ class DownloadSpeedAction(BaseAction):
 
     async def send(self, conn: Connection) -> None: ...
 
+    def __repr__(self) -> str: ...
+
 
 class CancelInputAction(BaseAction):
     @dataclass
@@ -266,3 +276,5 @@ class PingAction(BaseAction):
     async def handle(self) -> None: ...
 
     async def send(self, conn: Connection) -> None: ...
+
+    def __repr__(self) -> str: ...

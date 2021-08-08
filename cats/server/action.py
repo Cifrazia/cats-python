@@ -177,6 +177,10 @@ class BaseAction(dict):
     async def send(self, conn):
         raise NotImplementedError
 
+    def __repr__(self):
+        return f'{type(self).__name__}(data={str(self.data)[:256]}, headers={self.headers}, ' \
+               f'status={self.status}, message_id={self.message_id})'
+
 
 class BasicAction(BaseAction, abstract=True):
     __slots__ = ('data_len', 'data_type', 'compression', 'encoded')
@@ -291,6 +295,12 @@ class BasicAction(BaseAction, abstract=True):
             if data_type == T_JSON:
                 debug(f'[SEND {conn.address}] [{int2hex(self.message_id):<4}] -> {filter_json(self.data)}')
 
+    def __repr__(self):
+        return f'{type(self).__name__}(data={str(self.data)[:256]}, headers={self.headers}, ' \
+               f'status={self.status}, message_id={self.message_id}, ' \
+               f'data_len={self.data_len}, data_type={self.data_type}, ' \
+               f'compression={self.compression}, encoded={self.encoded})'
+
 
 class Action(BasicAction):
     __slots__ = ('handler_id', 'send_time')
@@ -399,6 +409,12 @@ class Action(BasicAction):
         finally:
             if isinstance(data, Path):
                 data.unlink(missing_ok=True)
+
+    def __repr__(self):
+        return f'{type(self).__name__}(data={str(self.data)[:256]}, headers={self.headers}, ' \
+               f'status={self.status}, message_id={self.message_id}, ' \
+               f'data_len={self.data_len}, data_type={self.data_type}, ' \
+               f'compression={self.compression}, send_time={self.send_time}, encoded={self.encoded})'
 
 
 class StreamAction(Action):
@@ -574,6 +590,11 @@ class StreamAction(Action):
                 for i in range(math.ceil(len(item) / size)):
                     yield item[i * size:]
 
+    def __repr__(self):
+        return f'{type(self).__name__}(data={str(self.data)[:256]}, headers={self.headers}, ' \
+               f'status={self.status}, message_id={self.message_id}, ' \
+               f'data_type={self.data_type}, compression={self.compression}'
+
 
 class InputAction(BasicAction):
     type_id = b'\x02'
@@ -694,6 +715,9 @@ class DownloadSpeedAction(BaseAction):
             await conn.stream.write(self.type_id + to_uint(speed, 4))
             debug(f'[SEND {conn.address}] SET Download speed: {format_amount(speed)}')
 
+    def __repr__(self):
+        return f'{type(self).__name__}(speed={self.speed})'
+
 
 class CancelInputAction(BaseAction):
     type_id = b'\x06'
@@ -761,3 +785,6 @@ class PingAction(BaseAction):
             now = time_ns() // 1000000
             await conn.stream.write(self.type_id + to_uint(now, 8))
             debug(f'[SEND {conn.address}] PONG {now}')
+
+    def __repr__(self):
+        return f'{type(self).__name__}(send_time={self.send_time})'
