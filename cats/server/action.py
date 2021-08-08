@@ -1,4 +1,5 @@
 import asyncio
+import math
 from dataclasses import dataclass
 from functools import partial
 from io import BytesIO
@@ -8,7 +9,6 @@ from struct import Struct
 from time import time_ns
 from typing import NamedTuple, Type
 
-import math
 from sentry_sdk import capture_exception
 
 from cats.codecs import Codec, T_FILE, T_JSON
@@ -340,8 +340,6 @@ class Action(BasicAction):
             for middleware in self.conn.app.middleware:
                 fn = partial(middleware, fn)
 
-            self.conn.message_pool.append(self.message_id)
-
             try:
                 result = await asyncio.shield(fn())
                 if result is not None:
@@ -356,6 +354,7 @@ class Action(BasicAction):
                 raise
             except Exception as err:
                 capture_exception(err, scope=self.conn.scope)
+                raise
 
     @classmethod
     async def _recv_head(cls, conn):

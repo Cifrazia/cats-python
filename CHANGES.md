@@ -7,6 +7,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.15] 2021-08-08
+
+### Fixed
+
++ Fixed `Action.handle` causing problems:
+  + Fixed `Message ID` duplication in `Connection.message_pool`
+  + Fixed `Exception` suppression
+
 ## [0.3.14] 2021-08-02
 
 ### Fixed
