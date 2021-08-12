@@ -226,10 +226,10 @@ class Connection:
             'instance': repr(identity),
         })
 
-        logging.debug(f'Signed in as {identity.__class__.__name__} <{self.host}:{self.port}>')
+        logging.debug(f'Signed in as {self.identity_scope_user} <{self.host}:{self.port}>')
 
     def sign_out(self):
-        logging.debug(f'Signed out from {self.identity.__class__.__name__} <{self.host}:{self.port}>')
+        logging.debug(f'Signed out from {self.identity_scope_user} <{self.host}:{self.port}>')
         if self.signed_in():
             self._sign_out_and_remove_from_channels()
         self.scope.set_user(self.identity_scope_user)

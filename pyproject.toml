@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cats-python"
-version = "0.3.16"
+version = "0.3.17"
 description = "Cifrazia Action Transport System for Python"
 authors = ["Bogdan Parfenov <adam.brian.bright@gmail.com>"]
 license = "MIT"
@@ -10,7 +10,6 @@ repository = "https://github.com/AdamBrianBright/cats-python.git"
 documentation = "https://github.com/AdamBrianBright/cats-python/wiki"
 keywords = ["cifrazia", "tcp", "rpc", "cats", "tornado"]
 classifiers = [
-    "Development Status :: 4 - Beta",
     "Environment :: Console",
     "Framework :: AsyncIO",
     "Intended Audience :: Developers",
@@ -29,6 +28,7 @@ packages = [
 ]
 
 [tool.poetry.urls]
+"ChangeLog" = "https://github.com/AdamBrianBright/cats-python/blob/master/CHANGES.md"
 "Bug Tracker" = "https://github.com/AdamBrianBright/cats-python/issues"
 "Contact Author" = "https://vk.com/adam_bright"
 
