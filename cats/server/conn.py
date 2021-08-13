@@ -278,7 +278,7 @@ class Connection:
 
     def _get_free_message_id(self) -> int:
         while True:
-            message_id = randint(17783, 35565)
+            message_id = randint(0x8000, 0xFFFF)
             if message_id not in self.message_pool:
                 break
 
