@@ -22,5 +22,5 @@ jobs:
 
       - uses: retypeapp/action-github-pages@v1
         with:
-          branch: master
+          branch: retype
           update-branch: true
