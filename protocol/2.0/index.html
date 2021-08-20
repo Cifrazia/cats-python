@@ -7,21 +7,21 @@
     <meta name="turbo-cache-control" content="no-cache">
 
     <!-- Primary Meta Tags -->
-    <title>Welcome | CATS python</title>
-    <meta name="title" content="Welcome | CATS python">
-    <meta name="description" content="CATS - is a TCP based byte protocol for persistence package exchanging. This so-called protocol is designed specifically" />
+    <title>Protocol v2.0 | CATS python</title>
+    <meta name="title" content="Protocol v2.0 | CATS python">
+    <meta name="description" content="Minimal client protocol version: 2.0" />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://adambrianbright.github.io/cats-python/">
-    <meta property="og:title" content="Welcome | CATS python">
-    <meta property="og:description" content="CATS - is a TCP based byte protocol for persistence package exchanging. This so-called protocol is designed specifically">
+    <meta property="og:url" content="https://adambrianbright.github.io/cats-python/protocol/2.0/">
+    <meta property="og:title" content="Protocol v2.0 | CATS python">
+    <meta property="og:description" content="Minimal client protocol version: 2.0">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://adambrianbright.github.io/cats-python/">
-    <meta property="twitter:title" content="Welcome | CATS python">
-    <meta property="twitter:description" content="CATS - is a TCP based byte protocol for persistence package exchanging. This so-called protocol is designed specifically">
+    <meta property="twitter:url" content="https://adambrianbright.github.io/cats-python/protocol/2.0/">
+    <meta property="twitter:title" content="Protocol v2.0 | CATS python">
+    <meta property="twitter:description" content="Minimal client protocol version: 2.0">
     
     <script>(function () { var el = document.documentElement, m = localStorage.getItem("/cats-python/doc_theme"), wm = window.matchMedia; if (m === "dark" || (!m && wm && wm("(prefers-color-scheme: dark)").matches)) { el.classList.add("dark") } else { el.classList.remove("dark") } })();</script>
 
@@ -30,6 +30,7 @@
 
     <script type="text/javascript" src="/cats-python/resources/js/config.js?v=1.8.2.682759294717" defer data-turbo-track="reload"></script>
     <script type="text/javascript" src="/cats-python/resources/js/retype.js?v=1.8.2" defer data-turbo-track="reload"></script>
+    <script id="prism-js" type="text/javascript" src="/cats-python/resources/js/prism.js?v=1.8.2.682759294717" defer></script>
 </head>
     <body>
         <div id="docs-app" class="relative text-base antialiased text-gray-700 bg-white font-body dark:bg-dark-850 dark:text-dark-300">
@@ -197,64 +198,296 @@
                 <div id="docs-sidebar-right-toggle"></div>
                
                 <!-- Page content  -->
-<doc-anchor-target id="welcome" class="break-words">
+<doc-anchor-target id="protocol-v20" class="break-words">
     <h1>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#welcome">#</doc-anchor-trigger>
-        <span>Welcome</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#protocol-v20">#</doc-anchor-trigger>
+        <span>Protocol v2.0</span>
     </h1>
 </doc-anchor-target>
-<doc-anchor-target id="cifrazia-action-transport-system">
+<doc-anchor-target id="client">
     <h2>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#cifrazia-action-transport-system">#</doc-anchor-trigger>
-        <span>Cifrazia Action Transport System</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#client">#</doc-anchor-trigger>
+        <span>Client</span>
     </h2>
 </doc-anchor-target>
-<p>CATS - is a TCP based byte protocol for persistence package exchanging. This so-called protocol is designed specifically
-for internal use in <a href="https://cifrazia.com">Cifrazia</a>.</p>
-<p><a href="protocol/">Learn more about protocol</a></p>
-<doc-anchor-target id="features">
+<p>Minimal client protocol version: <code v-pre>2.0</code></p>
+<doc-anchor-target id="statement">
     <h2>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#features">#</doc-anchor-trigger>
-        <span>Features</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#statement">#</doc-anchor-trigger>
+        <span>Statement</span>
     </h2>
+</doc-anchor-target>
+<doc-panels>
+   <doc-panel id="client-statement">
+       <template #title>Client statement</template>
+<doc-tabs>
+<doc-tab id="json">
+<template #title>JSON</template>
+<div class="codeblock-wrapper"><doc-codeblock line-numbers>
+<pre class="language-json5"><code v-pre class="language-json5">{
+  // Version of API (not protocol)
+  &quot;api&quot;: 0,
+  // Client local time in ms
+  &quot;clientTime&quot;: 16500123000,
+  // Which format to use for object encoding: JSON | YAML | TOML
+  &quot;schemeFormat&quot;: &quot;JSON&quot;,
+  // Compression algorithms, supported on client side: gzip | zlib
+  &quot;compressors&quot;: [
+    &quot;gzip&quot;,
+    &quot;zlib&quot;
+  ],
+  // Optional. compressors[0] used by default
+  &quot;defaultCompression&quot;: &quot;zlib&quot;,
+}</code></pre>
+</doc-codeblock></div>
+</doc-tab>
+<doc-tab id="yaml">
+<template #title>YAML</template>
+<div class="codeblock-wrapper"><doc-codeblock line-numbers>
+<pre class="language-yaml"><code v-pre class="language-yaml">api: 0
+clientTime: 16500123000
+schemeFormat: JSON
+compressors:
+  - gzip
+  - zlib
+defaultCompression: zlib</code></pre>
+</doc-codeblock></div>
+</doc-tab>
+<doc-tab id="toml">
+<template #title>TOML</template>
+<div class="codeblock-wrapper"><doc-codeblock line-numbers>
+<pre class="language-toml"><code v-pre class="language-toml">api = 0.0
+clientTime = 16500123000.0
+schemeFormat = &quot;JSON&quot;
+compressors = [
+  &quot;gzip&quot;,
+  &quot;zlib&quot;
+]
+defaultCompression = &quot;zlib&quot;</code></pre>
+</doc-codeblock></div>
+</doc-tab>
+</doc-tabs>
+   </doc-panel>
+   <doc-panel id="server-statement">
+       <template #title>Server statement</template>
+<doc-tabs>
+<doc-tab id="json">
+<template #title>JSON</template>
+<div class="codeblock-wrapper"><doc-codeblock line-numbers>
+<pre class="language-json5"><code v-pre class="language-json5">{
+  // Server local time in ms [UTC]
+  &quot;serverTime&quot;: 165000123000,
+}</code></pre>
+</doc-codeblock></div>
+</doc-tab>
+<doc-tab id="yaml">
+<template #title>YAML</template>
+<div class="codeblock-wrapper"><doc-codeblock line-numbers>
+<pre class="language-yaml"><code v-pre class="language-yaml">serverTime: 165000123000</code></pre>
+</doc-codeblock></div>
+</doc-tab>
+<doc-tab id="toml">
+<template #title>TOML</template>
+<div class="codeblock-wrapper"><doc-codeblock line-numbers>
+<pre class="language-toml"><code v-pre class="language-toml">serverTime = 165000123000.0</code></pre>
+</doc-codeblock></div>
+</doc-tab>
+</doc-tabs>
+   </doc-panel>
+</doc-panels>
+<doc-anchor-target id="actions">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#actions">#</doc-anchor-trigger>
+        <span>Actions</span>
+    </h2>
+</doc-anchor-target>
+<doc-anchor-target id="0x00-action">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#0x00-action">#</doc-anchor-trigger>
+        <span><code v-pre>0x00</code> Action</span>
+    </h3>
+</doc-anchor-target>
+<p><button class="no-link inline-flex items-center font-medium cursor-pointer transition-colors duration-200 ease-out focus:outline-none bg-gray-900 hover:bg-gray-700 dark:bg-white dark:hover:bg-dark-300 text-white dark:text-black px-4 h-10 text-sm rounded-none" style="margin: 0px 4px 4px 0px;">
+    <span><svg xmlns="http://www.w3.org/2000/svg" class="mb-px inline-flex mr-2" width="18" height="18" viewBox="0 0 24 24" role="presentation"><g fill="currentColor"><path fill-rule="evenodd" d="M12.876.64a1.75 1.75 0 00-1.75 0l-8.25 4.762a1.75 1.75 0 00-.875 1.515v9.525c0 .625.334 1.203.875 1.515l8.25 4.763a1.75 1.75 0 001.75 0l8.25-4.762a1.75 1.75 0 00.875-1.516V6.917a1.75 1.75 0 00-.875-1.515L12.876.639zm-1 1.298a.25.25 0 01.25 0l7.625 4.402-7.75 4.474-7.75-4.474 7.625-4.402zM3.501 7.64v8.803c0 .09.048.172.125.216l7.625 4.402v-8.947L3.501 7.64zm9.25 13.421l7.625-4.402a.25.25 0 00.125-.216V7.639l-7.75 4.474v8.947z"/></g></svg></span>
+    <span>Head</span>
+</button>
+<button class="no-link inline-flex items-center font-medium cursor-pointer transition-colors duration-200 ease-out focus:outline-none bg-gray-900 hover:bg-gray-700 dark:bg-white dark:hover:bg-dark-300 text-white dark:text-black px-4 h-10 text-sm rounded-none" style="margin: 0px 4px 4px 0px;">
+    <span><svg xmlns="http://www.w3.org/2000/svg" class="mb-px inline-flex mr-2" width="18" height="18" viewBox="0 0 24 24" role="presentation"><g fill="currentColor"><path fill-rule="evenodd" d="M12.876.64a1.75 1.75 0 00-1.75 0l-8.25 4.762a1.75 1.75 0 00-.875 1.515v9.525c0 .625.334 1.203.875 1.515l8.25 4.763a1.75 1.75 0 001.75 0l8.25-4.762a1.75 1.75 0 00.875-1.516V6.917a1.75 1.75 0 00-.875-1.515L12.876.639zm-1 1.298a.25.25 0 01.25 0l7.625 4.402-7.75 4.474-7.75-4.474 7.625-4.402zM3.501 7.64v8.803c0 .09.048.172.125.216l7.625 4.402v-8.947L3.501 7.64zm9.25 13.421l7.625-4.402a.25.25 0 00.125-.216V7.639l-7.75 4.474v8.947z"/></g></svg></span>
+    <span>Headers</span>
+</button>
+<button class="no-link inline-flex items-center font-medium cursor-pointer transition-colors duration-200 ease-out focus:outline-none bg-gray-900 hover:bg-gray-700 dark:bg-white dark:hover:bg-dark-300 text-white dark:text-black px-4 h-10 text-sm rounded-none" style="margin: 0px 4px 4px 0px;">
+    <span><svg xmlns="http://www.w3.org/2000/svg" class="mb-px inline-flex mr-2" width="18" height="18" viewBox="0 0 24 24" role="presentation"><g fill="currentColor"><path fill-rule="evenodd" d="M12.876.64a1.75 1.75 0 00-1.75 0l-8.25 4.762a1.75 1.75 0 00-.875 1.515v9.525c0 .625.334 1.203.875 1.515l8.25 4.763a1.75 1.75 0 001.75 0l8.25-4.762a1.75 1.75 0 00.875-1.516V6.917a1.75 1.75 0 00-.875-1.515L12.876.639zm-1 1.298a.25.25 0 01.25 0l7.625 4.402-7.75 4.474-7.75-4.474 7.625-4.402zM3.501 7.64v8.803c0 .09.048.172.125.216l7.625 4.402v-8.947L3.501 7.64zm9.25 13.421l7.625-4.402a.25.25 0 00.125-.216V7.639l-7.75 4.474v8.947z"/></g></svg></span>
+    <span>Payload</span>
+</button></p>
+<p>Common request/response action.</p>
+<doc-anchor-target id="head">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#head">#</doc-anchor-trigger>
+        <span>Head</span>
+    </h4>
 </doc-anchor-target>
 <ul>
-<li>One action at a time</li>
-<li>Up-to 4GB payload in single plain Action</li>
-<li>Streaming Actions</li>
-<li>Chained inputs</li>
-<li>Broadcasts</li>
-<li>Multiple data formats</li>
-<li>Custom handshakes</li>
-<li>Local and global encryption</li>
+<li><strong>Handler ID</strong>: <code v-pre>uInt2</code> - <doc-anchor-trigger to="#endpoints">Endpoint ID</doc-anchor-trigger> - treat as URL alternative</li>
+<li><strong>Message ID</strong>: <code v-pre>uInt2</code> - <doc-anchor-trigger to="#message-id">Message ID</doc-anchor-trigger></li>
+<li><strong>Send Time</strong>: <code v-pre>uInt8</code> - Client send time in ms</li>
+<li><strong>Data Type</strong>: <code v-pre>uInt1</code> - What <doc-anchor-trigger to="#data-types">type</doc-anchor-trigger> <strong>PAYLOAD</strong> is</li>
+<li><strong>Compression</strong>: <code v-pre>uInt1</code> - What compression was used on <strong>PAYLOAD</strong></li>
+<li><strong>Data Len</strong>: <code v-pre>uInt4</code> - Length of <strong>HEADERS</strong> + <strong>HEADER_SEPARATOR</strong> + <strong>PAYLOAD</strong></li>
 </ul>
-<p>
-<div class="mb-6 px-5 py-4 flex justify-between relative border border-gray-300 hover:border-gray-400 dark:border-dark-650 dark:hover:border-dark-450 rounded transition-colors duration-150">
-    <div class="flex items-center text-blue-500 dark:text-blue-400">
-        <span class="inline-block mb-px">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" role="presentation" fill="currentColor"><path fill="none" d="M0 0h24v24H0z"/><path d="M19.92 12.38a1 1 0 00-.22-1.09l-7-7a.996.996 0 10-1.41 1.41l5.3 5.3H5c-.55 0-1 .45-1 1s.45 1 1 1h11.59l-5.29 5.29a.996.996 0 000 1.41c.19.2.44.3.7.3s.51-.1.71-.29l7-7c.09-.09.16-.21.21-.33z"/></svg>
-        </span>
-        <span class="inline-block font-medium ml-2">Getting Started</span>
+<doc-anchor-target id="headers">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#headers">#</doc-anchor-trigger>
+        <span>Headers</span>
+    </h4>
+</doc-anchor-target>
+<p>Message header works like in HTTP: It contains META information that can be used at protocol level to change up server
+behavior w/o changing business logic.</p>
+<p>Message header is a simple <code v-pre>UTF-8</code> encoded JSON (YAML or TOML) dictionary followed by two empty bytes <code v-pre>00 00</code></p>
+<p><strong>Request only Headers</strong></p>
+<ul>
+<li><code v-pre>&quot;Offset&quot;: int</code> [1] - tells the server to skip N amount of first bytes of <code v-pre>&lt;Data&gt;</code> section</li>
+</ul>
+<p><strong>Response only Headers</strong></p>
+<p>There are no response-only header currently supported</p>
+<p><strong>Common Headers</strong></p>
+<ul>
+<li><code v-pre>&quot;Files&quot;: [{&quot;key&quot;: str, &quot;name&quot;: str, &quot;size&quot;: int, &quot;type&quot;: str?}]</code> [1] - This header is being used when <code v-pre>&lt;Data Type&gt;</code>
+in packet header is set to <code v-pre>FILES - 0x02</code></li>
+<li><code v-pre>&quot;Status&quot;: int</code> - HTTP Status code analog. Usually only used by a server to show client if there was any error or not.</li>
+</ul>
+<blockquote>
+<p><strong>[1]</strong> Using &quot;Offset&quot; header for the handler that returns <code v-pre>FILES</code> will also decrease &quot;size&quot; fields in &quot;Files&quot; response header.
+If &quot;size&quot; will drop to zero, then file won&#x27;t appear in &quot;Files&quot; header.</p>
+</blockquote>
+<doc-anchor-target id="payload">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#payload">#</doc-anchor-trigger>
+        <span>Payload</span>
+    </h4>
+</doc-anchor-target>
+<p>Whatever <code v-pre>Handler</code> accepts/returns</p>
+<doc-anchor-target id="endpoints">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#endpoints">#</doc-anchor-trigger>
+        <span>Endpoints</span>
+    </h2>
+</doc-anchor-target>
+<p>In HTTP servers, endpoints are functions, that are located with <code v-pre>method: GET|POST|etc.</code> and <code v-pre>URL: https://...</code>. In **
+CATS** we use <code v-pre>uInt2</code> ID to locate endpoints.</p>
+<p>Endpoints are triggered with <code v-pre>Action</code> and <code v-pre>StreamAction</code> messages, and they can ask issuer for additional info
+using <doc-anchor-trigger to="#inputs">Inputs</doc-anchor-trigger></p>
+<doc-anchor-target id="message-id">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#message-id">#</doc-anchor-trigger>
+        <span>Message ID</span>
+    </h2>
+</doc-anchor-target>
+<p>Message ID - is <code v-pre>uInt2</code> random number, generated by sending party. It is used to track <code v-pre>request-response</code>.</p>
+<ul>
+<li>Message ID must be unique for active requests</li>
+<li>Message ID must be <code v-pre>0x0000</code> to <code v-pre>0x7FFF</code> for <code v-pre>request-reply</code> scenario</li>
+<li>Message ID must be <code v-pre>0x8000</code> to <code v-pre>0xFFFF</code> for <code v-pre>broadcast/publish</code> scenario</li>
+<li>You may use increment counter or RNG to generator Message ID</li>
+<li>Response will contain the same <code v-pre>Message ID</code> as request</li>
+</ul>
+<doc-anchor-target id="data-types">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#data-types">#</doc-anchor-trigger>
+        <span>Data Types</span>
+    </h2>
+</doc-anchor-target>
+<doc-anchor-target id="0x00-binary">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#0x00-binary">#</doc-anchor-trigger>
+        <span><code v-pre>0x00</code> Binary</span>
+    </h3>
+</doc-anchor-target>
+<p>Plain byte buffer, how to use/parse it, should be described in <doc-anchor-trigger to="#endpoints">API endpoint</doc-anchor-trigger> description</p>
+<doc-anchor-target id="0x01-scheme">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#0x01-scheme">#</doc-anchor-trigger>
+        <span><code v-pre>0x01</code> Scheme</span>
+    </h3>
+</doc-anchor-target>
+<p>JSON (YAML or TOML) encoded object. Which format is used declared at <a href="../#initialisation">initialisation stage</a></p>
+<doc-anchor-target id="0x02-files">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#0x02-files">#</doc-anchor-trigger>
+        <span><code v-pre>0x02</code> Files</span>
+    </h3>
+</doc-anchor-target>
+<p>One or multiple files, concatenated together in a single byte buffer. Information about their respective sizes, names,
+formats, etc. is located in <strong>HEADERS</strong></p>
+<doc-tabs>
+<doc-tab id="json">
+<template #title>JSON</template>
+<div class="codeblock-wrapper"><doc-codeblock line-numbers>
+<div class="codeblock-title">Headers</div>
+<pre class="language-json5"><code v-pre class="language-json5">{
+  // List of files (order is same as byte buffers in payload) 
+  &quot;Files&quot;: [
+    {
+      // Hashmap key, may equal to name
+      &quot;key&quot;: &quot;avatar&quot;, 
+      // Selected file name
+      &quot;name&quot;: &quot;Anakin.jpg&quot;,
+      // Size of byte buffer, that went into payload
+      &quot;size&quot;: 51231, 
+      // MIME (optional)
+      &quot;type&quot;: &quot;image/jpeg&quot;,
+    },
+    // ... more files
+  ]
+}</code></pre>
+</doc-codeblock></div>
+</doc-tab>
+<doc-tab id="yaml">
+<template #title>YAML</template>
+<div class="codeblock-wrapper"><doc-codeblock line-numbers>
+<div class="codeblock-title">Headers</div>
+<pre class="language-yaml"><code v-pre class="language-yaml">Files:
+  - key: avatar
+    name: Anakin.jpg
+    size: 51231
+    type: image/jpeg</code></pre>
+</doc-codeblock></div>
+</doc-tab>
+<doc-tab id="toml">
+<template #title>TOML</template>
+<div class="codeblock-wrapper"><doc-codeblock line-numbers>
+<div class="codeblock-title">Headers</div>
+<pre class="language-toml"><code v-pre class="language-toml">[[Files]]
+key = &quot;avatar&quot;
+name = &quot;Anakin.jpg&quot;
+size = 51231.0
+type = &quot;image/jpeg&quot;</code></pre>
+</doc-codeblock></div>
+</doc-tab>
+</doc-tabs>
+<div class="flex mb-6">
+    <div class="flex-shrink-0 w-1 rounded-tl rounded-bl bg-blue-500 dark:bg-blue-400"></div>
+    <div class="flex w-full py-4 border border-l-0 border-gray-300 rounded-tr rounded-br doc-alert bg-white dark:bg-dark-700 dark:border-dark-700" role="alert">
+        <div class="flex items-center ml-4 h-7">
+            <svg xmlns="http://www.w3.org/2000/svg" class="mb-px text-blue-500 dark:text-blue-400" width="22" height="22" viewBox="0 0 24 24" role="presentation">
+                <g fill="currentColor"><g>
+                    <path d="M12 1C5.93 1 1 5.93 1 12s4.93 11 11 11 11-4.93 11-11S18.07 1 12 1zm0 20c-4.96 0-9-4.04-9-9s4.04-9 9-9 9 4.04 9 9-4.04 9-9 9z"></path>
+                    <path d="M12 11c-.55 0-1 .45-1 1v4c0 .55.45 1 1 1s1-.45 1-1v-4c0-.55-.45-1-1-1zM12.01 7c-.56 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z"></path>
+                    <path fill="none" d="M0 0h24v24H0z"></path>
+                </g></g>
+            </svg>
+        </div>
+        <div class="pr-5 ml-3">
+<p>If payload was cut with <code v-pre>Offset</code> header, <code v-pre>Files[n].size</code> will be reduced as well.</p>
+        </div>
     </div>
-    <div class="flex items-center text-xs text-gray-400 dark:text-dark-400">
-        <span>/cats-python/get-started/</span>
-    </div>
-    <a href="/cats-python/get-started/" class="absolute block inset-0"></a>
 </div>
-</p>
-<doc-anchor-target id="requirements">
-    <h2>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#requirements">#</doc-anchor-trigger>
-        <span>Requirements</span>
-    </h2>
+<doc-anchor-target id="0x03-byte-scheme">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#0x03-byte-scheme">#</doc-anchor-trigger>
+        <span><code v-pre>0x03</code> Byte Scheme</span>
+    </h3>
 </doc-anchor-target>
-<ul>
-<li>Python <code v-pre>^3.9</code></li>
-<li>Tornado <code v-pre>^6.1</code></li>
-<li>Sentry SDK <code v-pre>^1.1.0</code></li>
-<li>uJSON <code v-pre>^4.0.2</code></li>
-<li>PyTZ <code v-pre>^2021.1</code></li>
-</ul>
+<p>Custom data scheme, encoded in plain bytes (like <doc-anchor-trigger to="#head">action head</doc-anchor-trigger>)</p>
 
 
 
@@ -264,7 +497,7 @@ for internal use in <a href="https://cifrazia.com">Cifrazia</a>.</p>
             </div>
 
             <div class="flex flex-wrap items-center justify-between mt-14">
-    <a class="my-2.5 inline-flex items-center text-sm whitespace-nowrap text-blue-500 dark:text-blue-400 hover:text-blue-700 hover:underline" href="https://github.com/AdamBrianBright/cats-python/blob/master/wiki/index.md" target="_blank" rel="noopener">
+    <a class="my-2.5 inline-flex items-center text-sm whitespace-nowrap text-blue-500 dark:text-blue-400 hover:text-blue-700 hover:underline" href="https://github.com/AdamBrianBright/cats-python/blob/master/wiki/protocol/2.0.md" target="_blank" rel="noopener">
         <svg class="mr-1.5" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" overflow="visible"><path d="M20 12c-.55 0-1 .45-1 1v7c0 .55-.45 1-1 1H4c-.55 0-1-.45-1-1V6c0-.55.45-1 1-1h7c.55 0 1-.45 1-1s-.45-1-1-1H4C2.35 3 1 4.35 1 6v14c0 1.65 1.35 3 3 3h14c1.65 0 3-1.35 3-3v-7c0-.55-.45-1-1-1z" /><path d="M22.21 1.79c-1.18-1.18-3.24-1.18-4.41 0l-9.5 9.5c-.13.13-.22.29-.26.46l-1 4c-.08.34.01.7.26.95.18.2.44.3.7.3.08 0 .16-.01.24-.03l4-1c.18-.04.34-.13.46-.26l9.5-9.5c1.22-1.22 1.22-3.2.01-4.42zm-1.42 3l-9.3 9.3-2.11.53.53-2.11 9.3-9.3c.42-.42 1.16-.42 1.59 0 .43.43.43 1.15-.01 1.58z" /><path fill="none" d="M0 0h24v24H0z" /></svg>
         <span>Edit on GitHub</span>
     </a>
@@ -274,16 +507,16 @@ for internal use in <a href="https://cifrazia.com">Cifrazia</a>.</p>
 
 <nav class="flex mt-14">
     <div class="w-1/2">
+        <a class="px-5 py-4 h-full flex items-center break-all md:break-normal font-medium text-blue-500 dark:text-blue-400 border border-gray-300 hover:border-gray-400 dark:border-dark-650 dark:hover:border-dark-450 rounded-r rounded-l-lg transition-colors duration-150 relative hover:z-5" href="/cats-python/protocol/">
+            <svg xmlns="http://www.w3.org/2000/svg" class="mr-3" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" overflow="visible"><path d="M19 11H7.41l5.29-5.29a.996.996 0 10-1.41-1.41l-7 7a1 1 0 000 1.42l7 7a1.024 1.024 0 001.42-.01.996.996 0 000-1.41L7.41 13H19c.55 0 1-.45 1-1s-.45-1-1-1z" /><path fill="none" d="M0 0h24v24H0z" /></svg>
+            <span>
+                <span class="block text-xs font-normal text-gray-400 dark:text-dark-400">Previous</span>
+                <span class="block mt-1">Protocol</span>
+            </span>
+        </a>
     </div>
 
     <div class="w-1/2">
-        <a class="px-5 py-4 -mx-px h-full flex items-center justify-end break-all md:break-normal font-medium text-blue-500 dark:text-blue-400 border border-gray-300 hover:border-gray-400 dark:border-dark-650 dark:hover:border-dark-450 rounded-l rounded-r-lg transition-colors duration-150 relative hover:z-5" href="/cats-python/get-started/">
-            <span>
-                <span class="block text-xs font-normal text-right text-gray-400 dark:text-dark-400">Next</span>
-                <span class="block mt-1">Getting Started</span>
-            </span>
-            <svg xmlns="http://www.w3.org/2000/svg" class="ml-3" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" overflow="visible"><path d="M19.92 12.38a1 1 0 00-.22-1.09l-7-7a.996.996 0 10-1.41 1.41l5.3 5.3H5c-.55 0-1 .45-1 1s.45 1 1 1h11.59l-5.29 5.29a.996.996 0 000 1.41c.19.2.44.3.7.3s.51-.1.71-.29l7-7c.09-.09.16-.21.21-.33z" /><path fill="none" d="M0 0h24v24H0z" /></svg>
-        </a>
     </div>
 </nav>
 
@@ -331,6 +564,6 @@ for internal use in <a href="https://cifrazia.com">Cifrazia</a>.</p>
 
         <div id="docs-overlay-target"></div>
 
-        <script>window.__DOCS__ = { "title": "Welcome", icon: "file", hasPrism: false, hasMermaid: false }</script>
+        <script>window.__DOCS__ = { "title": "Protocol v2.0", icon: "file", hasPrism: true, hasMermaid: false }</script>
     </body>
 </html>
