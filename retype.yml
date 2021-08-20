@@ -1,0 +1,47 @@
+input: wiki
+output: .retype
+cname: me-docs.cifrazia.com
+url: https://cats-python.github.com
+branding:
+  title: CATS python
+  label: Docs
+  logo: img/logo-black.svg
+  logoDark: img/logo.svg
+meta:
+  title: " | CATS python"
+favicon: img/favicon.png
+edit:
+  repo: https://github.com/AdamBrianBright/cats-python
+  branch: master
+  base: wiki
+  label: Edit on GitLab
+links:
+  - text: Home
+    link: https://cats-python.github.com/
+  - text: GitHub
+    link: https://github.com/AdamBrianBright/cats-python
+  - text: Issues
+    link: https://github.com/AdamBrianBright/cats-python/issues
+  - text: TODO
+    link: https://github.com/AdamBrianBright/cats-python/projects/1
+footer:
+  copyright: "© Copyright {{ year }}. [Cifrazia, Inc.](https://cifrazia.com/) All rights reserved."
+  links:
+    - text: VK Group
+      link: https://vk.com/cifrazia
+snippets:
+  lineNumbers:
+    - bash
+    - command
+    - js
+    - json
+    - json5
+    - md
+    - py
+    - pyi
+    - sh
+    - toml
+    - ts
+    - txt
+    - yaml
+    - yml
