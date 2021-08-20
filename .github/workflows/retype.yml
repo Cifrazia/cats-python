@@ -20,7 +20,7 @@ jobs:
         with:
           config: retype.yml
 
-      - uses: retypeapp/action-github-pages
+      - uses: retypeapp/action-github-pages@v1
         with:
           branch: master
           update-branch: true
