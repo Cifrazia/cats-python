@@ -1,3 +1,5 @@
+.retype/
+
 !**/[Pp]ackages/build/
 !.axoCover/settings.json
 !.vscode/extensions.json

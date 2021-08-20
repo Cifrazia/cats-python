@@ -3,8 +3,8 @@ output: .retype
 cname: adambrianbright.github.io
 url: https://adambrianbright.github.io/cats-python/
 branding:
-  title: CATS python
-  label: Docs
+  title: CATS
+  label: python
   logo: img/logo-black.svg
   logoDark: img/logo.svg
 meta:
@@ -14,7 +14,7 @@ edit:
   repo: https://github.com/AdamBrianBright/cats-python
   branch: master
   base: wiki
-  label: Edit on GitLab
+  label: Edit on GitHub
 links:
   - text: Home
     link: https://adambrianbright.github.io/cats-python/
