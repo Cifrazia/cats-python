@@ -1,7 +1,7 @@
 input: wiki
 output: .retype
-cname: me-docs.cifrazia.com
-url: https://cats-python.github.com
+cname: adambrianbright.github.io
+url: https://adambrianbright.github.io/cats-python/
 branding:
   title: CATS python
   label: Docs
@@ -17,7 +17,7 @@ edit:
   label: Edit on GitLab
 links:
   - text: Home
-    link: https://cats-python.github.com/
+    link: https://adambrianbright.github.io/cats-python/
   - text: GitHub
     link: https://github.com/AdamBrianBright/cats-python
   - text: Issues
