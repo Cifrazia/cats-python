@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://cats-python.github.com/sitemap.xml.gz
+Sitemap: https://adambrianbright.github.io/cats-python/sitemap.xml.gz
