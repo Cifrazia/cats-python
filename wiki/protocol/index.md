@@ -43,25 +43,72 @@ specifies `schemeFormat: JSON`, then server will return statement in JSON.
 
 #### Protocol version validation
 
-+ C: `00 00 00 02` - Protocol version `2.0`
-+ S: `01` - client valid
+==- Client: Protocol version `2.0`
+
+```
+00 00 00 02
+```
+
+==- Server: Client is valid
+
+```
+01
+```
+
+===
 
 #### Statement exchange
 
-+
-C: `00 00 00 51` `7B 22 61 70 69 22 3A 31 2C 22 63 6C 69 65 6E 74 54 69 6D 65 22 3A 31 36 32 39 34 33 39 35 35 30 39 34 32 2C 22 73 63 68 65 6D 65 46 6F 72 6D 61 74 22 3A 22 4A 53 4F 4E 22 2C 22 63 6F 6D 70 72 65 73 73 6F 72 73 22 3A 5B 22 7A 6C 69 62 22 5D 7D`
-    + Payload length: `81`
-    + Payload: `{"api":1,"clientTime":1629439550942,"schemeFormat":"JSON","compressors":["zlib"]}`
-+ S: `00 00 00 1C` `7B 22 73 65 72 76 65 72 54 69 6D 65 22 3A 31 36 32 39 34 33 39 35 35 30 39 34 32 7D`
-    + Payload length: `28`
-    + Payload: `{"serverTime":1629439550942}`
+==- Client: client statement
+
+Payload length: `81`
+
+```
+00 00 00 51
+```
+
+Payload: `{"api":1,"clientTime":1629439550942,"schemeFormat":"JSON","compressors":["zlib"]}`
+
+```
+7B 22 61 70 69 22 3A 31 2C 22 63 6C 69 65 6E 74 54 69 6D 65 22 3A 31 36 
+32 39 34 33 39 35 35 30 39 34 32 2C 22 73 63 68 65 6D 65 46 6F 72 6D 61 
+74 22 3A 22 4A 53 4F 4E 22 2C 22 63 6F 6D 70 72 65 73 73 6F 72 73 22 3A 
+5B 22 7A 6C 69 62 22 5D 7D
+``` 
+
+==- Server: server statement
+
+Payload length: `28`
+
+```
+00 00 00 1C
+``` 
+
+Payload: `{"serverTime":1629439550942}`
+
+```
+7B 22 73 65 72 76 65 72 54 69 6D 65 22 3A 31 36 32 39 34 33 39 35 35 30 
+39 34 32 7D
+```
+
+===
 
 #### Handshake (SHA256)
 
-+
-C: `4a 4f 47 45 56 61 5f 70 6e 64 4a 34 47 69 5a 41 47 53 63 72 64 37 6e 33 37 41 42 6a 35 4d 47 30 36 74 6f 73 49 38 33 36 58 34 59`
-- signature
-+ S: `01` - handshake valid
+==- Client: Handshake hash
+
+```
+4a 4f 47 45 56 61 5f 70 6e 64 4a 34 47 69 5a 41 47 53 63 72 64 37 6e 33 
+37 41 42 6a 35 4d 47 30 36 74 6f 73 49 38 33 36 58 34 59
+```
+
+==- Server: Hanshake is valid
+
+```
+01
+```
+
+===
 
 #### Done
 
