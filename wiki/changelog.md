@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project poorly adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## `2.1.0` [!badge variant="info" text="NEXT"]
+## `4.1.0` [!badge variant="info" text="NEXT"]
 
 Released: 2021-09-20
 
@@ -13,7 +13,7 @@ Released: 2021-09-20
 
 - [ ] Added different scheme language support: YAML, TOML
 
-## `2.0.0` [!badge variant="info" text="LATEST"]
+## `4.0.0` [!badge variant="info" text="LATEST"]
 
 Released: 2021-08-31
 
@@ -42,6 +42,7 @@ Released: 2021-08-31
 
 ### Fixed
 
+- [x] Fixed `PyPi` version error
 - [x] Fixed slow sending, caused by `sleep(0.05)`, replaced with `Queue`
 
 ## `0.3.17`
