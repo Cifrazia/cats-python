@@ -1,8 +1,8 @@
 from pathlib import Path
 from types import GeneratorType
-from typing import Any, AsyncIterable, Iterable, Type, Union
+from typing import AsyncIterable, Iterable, TypeAlias
 
-import orjson
+import ujson
 
 from cats.errors import ProtocolError
 
@@ -17,7 +17,6 @@ __all__ = [
     'BytesGen',
     'BytesAsyncGen',
     'BytesAnyGen',
-    'NULL',
     'Byte',
     'Json',
     'File',
@@ -30,21 +29,21 @@ __all__ = [
     'Headers',
 ]
 
-Bytes = Union[bytes, bytearray, memoryview]
-BytesGen = Iterable[Bytes]
-BytesAsyncGen = AsyncIterable[Bytes]
-BytesAnyGen = Union[BytesGen, BytesAsyncGen]
+Bytes: TypeAlias = bytes | bytearray | memoryview
+BytesGen: TypeAlias = Iterable[Bytes]
+BytesAsyncGen: TypeAlias = AsyncIterable[Bytes]
+BytesAnyGen: TypeAlias = BytesGen | BytesAsyncGen
 
-NULL = type('NULL', (object,), {})
-Byte = Bytes
-Json = Union[str, int, float, dict, list, bool, type(None), Type[NULL]]
-File = Union[Path, str]
-List = (list, tuple, set, GeneratorType, QuerySet)
-
-T_Headers = Union[dict[str, Any], 'Headers']
+Byte: TypeAlias = Bytes
+Json: TypeAlias = str | int | float | dict | list | bool | None
+File: TypeAlias = Path | str
+List = list | tuple | set | GeneratorType | QuerySet
 
 
 class Missing(str):
+    """
+    Custom Missing type is required for Pydantic to work properly. IDK
+    """
     __slots__ = ()
 
     def __init__(self):
@@ -93,12 +92,15 @@ class Headers(dict):
         super().update(self._convert(*args, **kwargs))
 
     def encode(self) -> bytes:
-        return orjson.dumps(self)
+        return ujson.dumps(self, ensure_ascii=False, escape_forward_slashes=False).encode('utf-8')
 
     @classmethod
     def decode(cls, headers: Bytes) -> 'Headers':
         try:
-            headers = orjson.loads(headers)
+            headers = ujson.loads(headers)
         except ValueError:  # + UnicodeDecodeError
             headers = None
         return cls(headers or {})
+
+
+T_Headers: TypeAlias = Headers | dict[str]

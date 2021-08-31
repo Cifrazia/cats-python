@@ -1,12 +1,11 @@
 import asyncio
 import traceback
 from logging import getLogger
-from typing import Any, Callable, Optional
+from typing import Awaitable, Callable
 
 from tornado.iostream import StreamClosedError
 
-from cats.server.action import Action
-from cats.server.handlers import Handler
+from cats.v2.action import Action
 
 __all__ = [
     'Middleware',
@@ -15,10 +14,10 @@ __all__ = [
 
 logging = getLogger('CATS')
 
-Middleware = Callable[[Handler], Optional[Any]]
+Middleware = Callable[[Callable], Awaitable[Action | None]]
 
 
-async def default_error_handler(handler: Handler):
+async def default_error_handler(handler: Callable) -> Action | None:
     try:
         return await handler()
     except (KeyboardInterrupt, StreamClosedError):

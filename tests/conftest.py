@@ -1,15 +1,12 @@
 import asyncio
 import logging
 import platform
-from typing import List
 
 from pytest import fixture, mark
-from tornado.iostream import IOStream
-from tornado.tcpclient import TCPClient
 
-import cats.server
-import cats.server.middleware
-from tests.utils import init_cats_conn
+from cats.v2 import Config, Handshake, SHA256TimeHandshake
+from cats.v2.client import Connection
+from cats.v2.server import Api, Application, Middleware, Server, default_error_handler
 
 logging.basicConfig(level='DEBUG', force=True)
 
@@ -17,13 +14,12 @@ logging.basicConfig(level='DEBUG', force=True)
 @fixture(scope='session')
 def event_loop():
     if platform.system() == 'Windows':
-        # noinspection PyUnresolvedReferences
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     return asyncio.get_event_loop()
 
 
 @fixture(scope='session')
-def cats_api_list() -> List[cats.server.Api]:
+def cats_api_list() -> list[Api]:
     from tests.handlers import api
     return [
         api,
@@ -31,26 +27,34 @@ def cats_api_list() -> List[cats.server.Api]:
 
 
 @fixture(scope='session')
-def cats_middleware() -> List[cats.server.middleware.Middleware]:
+def cats_middleware() -> list[Middleware]:
     return [
-        cats.server.middleware.default_error_handler,
+        default_error_handler,
     ]
 
 
 @fixture(scope='session')
-def cats_app(cats_api_list, cats_middleware) -> cats.server.Application:
-    return cats.server.Application(cats_api_list, cats_middleware)
+def cats_config(cats_handshake) -> Config:
+    return Config(
+        handshake=cats_handshake,
+        debug=True,
+    )
 
 
 @fixture(scope='session')
-def cats_handshake() -> cats.Handshake:
-    return cats.SHA256TimeHandshake(b'secret_key', 1)
+def cats_app(cats_api_list, cats_middleware, cats_config) -> Application:
+    return Application(cats_api_list, cats_middleware, config=cats_config)
+
+
+@fixture(scope='session')
+def cats_handshake() -> Handshake:
+    return SHA256TimeHandshake(b'secret_key', 1)
 
 
 @fixture(scope='session')
 @mark.asyncio
-async def cats_server(cats_app, cats_handshake) -> cats.server.Server:
-    cats_server = cats.server.Server(app=cats_app, handshake=cats_handshake, debug=True)
+async def cats_server(cats_app, cats_handshake) -> Server:
+    cats_server = Server(app=cats_app)
     cats_server.bind_unused_port()
     cats_server.start(1)
     yield cats_server
@@ -59,16 +63,8 @@ async def cats_server(cats_app, cats_handshake) -> cats.server.Server:
 
 @fixture
 @mark.asyncio
-async def cats_client_stream(cats_server) -> IOStream:
-    tcp_client = TCPClient()
-    stream = await tcp_client.connect('127.0.0.1', cats_server.port)
-    yield stream
-    stream.close()
-
-
-@fixture
-@mark.asyncio
-async def cats_conn(cats_client_stream, cats_server, cats_app) -> cats.server.Connection:
-    conn = await init_cats_conn(cats_client_stream, '127.0.0.1', cats_server.port, cats_app, 1, cats_server.handshake)
-    yield conn
-    conn.close()
+async def cats_conn(cats_server, cats_config) -> Connection:
+    conn = Connection(cats_config, 1)
+    await conn.connect('127.0.0.1', cats_server.port)
+    async with conn:
+        yield conn

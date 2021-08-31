@@ -10,6 +10,9 @@ class IdentityMeta(type):
     def identity_list(cls) -> list[Type['Identity']]: ...
 
 
+IdentityObject = TypeVar('IdentityObject', bound='Identity')
+
+
 class Identity(metaclass=IdentityMeta):
     __slots__ = ()
 
@@ -27,6 +30,3 @@ class Identity(metaclass=IdentityMeta):
         Must return dict of data that can be used by Sentry
         """
         raise NotImplementedError
-
-
-IdentityChild = TypeVar('IdentityChild', bound=Identity)

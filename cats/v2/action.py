@@ -1,22 +1,18 @@
 import asyncio
-import math
-from dataclasses import dataclass
-from functools import partial
 from io import BytesIO
-from logging import getLogger
 from pathlib import Path
 from struct import Struct
 from time import time_ns
 from typing import NamedTuple, Type
 
-from sentry_sdk import capture_exception
+import math
+import struct_model
 
-from cats.codecs import Codec, T_FILE, T_JSON
-from cats.compression import Compressor
 from cats.errors import MalformedDataError, ProtocolError
-from cats.struct import O_NETWORK, uInt1, uInt2, uInt4, uInt8
-from cats.types import Headers
-from cats.utils import Delay, bytes2hex, filter_json, format_amount, int2hex, tmp_file
+from cats.types import Bytes, Headers
+from cats.utils import Delay, as_uint, bytes2hex, filter_json, format_amount, int2hex, tmp_file, to_uint
+from cats.v2.codecs import Codec, T_FILE, T_JSON
+from cats.v2.compression import Compressor
 
 __all__ = [
     'Input',
@@ -30,15 +26,9 @@ __all__ = [
     'PingAction',
 ]
 
-logging = getLogger('CATS.conn')
-debug = logging.debug
-
 MAX_IN_MEMORY = 1 << 24
 MAX_CHUNK_READ = 1 << 20
 PROPOSAL_PLACEHOLDER = bytes(5000)
-
-to_uint = partial(int.to_bytes, byteorder='big', signed=False)
-as_uint = partial(int.from_bytes, byteorder='big', signed=False)
 
 
 class Input:
@@ -58,13 +48,17 @@ class Input:
         if timeout:
             self.timer = asyncio.get_event_loop().call_later(timeout, self.cancel)
 
+    def done(self, result):
+        self.future.set_result(result)
+        self.cancel()
+
     def cancel(self):
         if self.timer is not None:
             self.timer.cancel()
             self.timer = None
         if not self.future.done():
             self.future.cancel()
-        self.conn.input_deq.pop(self.message_id, None)
+        self.conn.input_pool.pop(self.message_id, None)
 
 
 class BaseAction(dict):
@@ -139,19 +133,19 @@ class BaseAction(dict):
         if not self.conn:
             raise ValueError('Connection is not set')
         fut = asyncio.Future()
-        timeout = self.conn.app.input_timeout if timeout is None else timeout
+        timeout = self.conn.conf.input_timeout if timeout is None else timeout
 
         if not bypass_limit:
-            amount = sum(not i.bypass_count for i in self.conn.input_deq.values())
-            if amount > self.conn.app.INPUT_LIMIT:
-                k = min(self.conn.input_deq.keys())
-                self.conn.input_deq[k].cancel()
+            amount = sum(not i.bypass_count for i in self.conn.input_pool.values())
+            if amount > self.conn.conf.input_limit:
+                k = min(self.conn.input_pool.keys())
+                self.conn.input_pool[k].cancel()
 
         inp = Input(fut, self.conn, self.message_id, bypass_count, timeout)
-        if self.message_id in self.conn.input_deq:
+        if self.message_id in self.conn.input_pool:
             raise ProtocolError(f'Input query with MID {self.message_id} already exists')
 
-        self.conn.input_deq[self.message_id] = inp
+        self.conn.input_pool[self.message_id] = inp
         action = InputAction(data, headers=headers, status=status, message_id=self.message_id,
                              data_type=data_type, compression=compression)
         await action.send(self.conn)
@@ -167,12 +161,9 @@ class BaseAction(dict):
 
     async def dump_data(self, size: int) -> None:
         while size > 0:
-            size -= len(await self.conn.stream.read_bytes(min(size, MAX_CHUNK_READ), partial=True))
-        if fut := self.conn.recv_fut:
+            size -= len(await self.conn.read(min(size, MAX_CHUNK_READ), partial=True))
+        if fut := self.conn.recv_future:
             fut.set_result(None)
-
-    async def handle(self):
-        raise NotImplementedError
 
     async def send(self, conn):
         raise NotImplementedError
@@ -201,9 +192,6 @@ class BasicAction(BaseAction, abstract=True):
     async def _recv_head(cls, conn):
         raise NotImplementedError
 
-    async def handle(self):
-        raise NotImplementedError
-
     async def send(self, conn):
         raise NotImplementedError
 
@@ -216,7 +204,7 @@ class BasicAction(BaseAction, abstract=True):
         else:
             await self._recv_small_data()
 
-        if fut := self.conn.recv_fut:
+        if fut := self.conn.recv_future:
             fut.set_result(None)
 
     async def _recv_small_data(self):
@@ -229,7 +217,7 @@ class BasicAction(BaseAction, abstract=True):
         buff = await Compressor.decompress(buff, self.headers, compression=self.compression)
         self.data = await Codec.decode(buff, self.data_type, self.headers)
         if self.data_type == T_JSON:
-            debug(f'[RECV {self.conn.address}] [{int2hex(self.message_id):<4}] <- {filter_json(self.data)}')
+            self.conn.debug(f'[RECV {self.conn.address}] [{int2hex(self.message_id):<4}] <- {filter_json(self.data)}')
 
     async def _recv_large_data(self):
         left = self.data_len
@@ -250,9 +238,8 @@ class BasicAction(BaseAction, abstract=True):
             src.unlink(missing_ok=True)
 
     async def _recv_chunk(self, left):
-        chunk = await self.conn.stream.read_bytes(min(left, MAX_CHUNK_READ), partial=True)
-        debug(f'[RECV {self.conn.address}] [{int2hex(self.message_id):<4}] <- {bytes2hex(chunk[:64])}...')
-        self.conn.reset_idle_timer()
+        chunk = await self.conn.read(min(left, MAX_CHUNK_READ), partial=True)
+        self.conn.debug(f'[RECV {self.conn.address}] [{int2hex(self.message_id):<4}] <- {bytes2hex(chunk[:64])}...')
         left -= len(chunk)
         return chunk, left
 
@@ -264,10 +251,14 @@ class BasicAction(BaseAction, abstract=True):
             data_type = self.encoded
         if isinstance(data, Path):
             data, buff = tmp_file(), data
-            compression = await Compressor.compress_file(buff, data, self.headers, self.compression)
+            compression = await Compressor.compress_file(buff, data, self.headers,
+                                                         self.conn.allowed_compressors, self.conn.default_compressor,
+                                                         self.compression)
             data_len = data.stat().st_size
         else:
-            data, compression = await Compressor.compress(data, self.headers, self.compression)
+            data, compression = await Compressor.compress(data, self.headers,
+                                                          self.conn.allowed_compressors, self.conn.default_compressor,
+                                                          self.compression)
             data_len = len(data)
         return data, data_len, data_type, compression
 
@@ -281,19 +272,18 @@ class BasicAction(BaseAction, abstract=True):
 
         try:
             max_chunk_size = min(MAX_IN_MEMORY, conn.download_speed) or MAX_IN_MEMORY
-            with Delay(conn.download_speed) as delay:
-                while left > 0:
-                    size = min(left, max_chunk_size)
-                    chunk = fh.read(size)
-                    left -= size
-                    await delay(size)
-                    conn.reset_idle_timer()
-                    debug(f'[SEND {conn.address}] [{int2hex(self.message_id):<4}] -> {bytes2hex(chunk[:64])}...')
-                    await conn.stream.write(chunk)
+            delay = Delay(conn.download_speed)
+            while left > 0:
+                size = min(left, max_chunk_size)
+                chunk = fh.read(size)
+                left -= size
+                await delay(size)
+                conn.debug(f'[SEND {conn.address}] [{int2hex(self.message_id):<4}] -> {bytes2hex(chunk[:64])}...')
+                await conn.write(chunk)
         finally:
             fh.close()
             if data_type == T_JSON:
-                debug(f'[SEND {conn.address}] [{int2hex(self.message_id):<4}] -> {filter_json(self.data)}')
+                conn.debug(f'[SEND {conn.address}] [{int2hex(self.message_id):<4}] -> {filter_json(self.data)}')
 
     def __repr__(self):
         return f'{type(self).__name__}(data={str(self.data)[:256]}, headers={self.headers}, ' \
@@ -306,16 +296,14 @@ class Action(BasicAction):
     __slots__ = ('handler_id', 'send_time')
 
     type_id = b'\x00'
-    head_struct = Struct(f'{O_NETWORK}2{uInt2}{uInt8}2{uInt1}{uInt4}')
 
-    @dataclass
-    class Head:
-        handler_id: int
-        message_id: int
-        send_time: int
-        data_type: int
-        compression: int
-        data_len: int
+    class Head(struct_model.StructModel):
+        handler_id: struct_model.uInt2
+        message_id: struct_model.uInt2
+        send_time: struct_model.uInt8
+        data_type: struct_model.uInt1
+        compression: struct_model.uInt1
+        data_len: struct_model.uInt4
 
     def __init__(self, data=None, *, headers=None, status=None, message_id=None,
                  handler_id=None, data_len=None, data_type=None, compression=None,
@@ -324,87 +312,60 @@ class Action(BasicAction):
         assert data_type is None or isinstance(data_type, int), 'Invalid data type provided'
 
         self.handler_id = handler_id
-        self.send_time = send_time or (time_ns() // 1000000)
+        self.send_time = send_time or (time_ns() // 1000_000)
         super().__init__(data, headers=headers, status=status, message_id=message_id,
                          data_len=data_len, data_type=data_type, compression=compression, encoded=encoded)
 
     @classmethod
     async def init(cls, conn):
-        conn.reset_idle_timer()
         head = await cls._recv_head(conn)
-
-        headers = await conn.stream.read_until(cls.HEADER_SEPARATOR, head.data_len)
+        headers = await conn.read_until(cls.HEADER_SEPARATOR, head.data_len)
         head.data_len -= len(headers)
         headers = Headers.decode(headers[:-2])
-        debug(f'[RECV {conn.address}] [{int2hex(head.message_id):<4}] <- HEADERS {headers}')
-        conn.reset_idle_timer()
+        conn.debug(f'[RECV {conn.address}] [{int2hex(head.message_id):<4}] <- HEADERS {headers}')
 
-        inst = cls(**vars(head), headers=headers)
-        inst.conn = conn
-        return inst
-
-    async def handle(self):
-        with self.conn.preserve_message_id(self.message_id):
-            handler = self.conn.dispatch(self.handler_id)
-            fn = handler(self)
-            for middleware in self.conn.app.middleware:
-                fn = partial(middleware, fn)
-
-            try:
-                result = await asyncio.shield(fn())
-                if result is not None:
-                    if not isinstance(result, Action):
-                        raise ProtocolError('Returned invalid response')
-
-                    result.handler_id = self.handler_id
-                    result.message_id = self.message_id
-                    result.offset = self.offset
-                    await result.send(self.conn)
-            except self.conn.IGNORE_ERRORS:
-                raise
-            except Exception as err:
-                capture_exception(err, scope=self.conn.scope)
-                raise
+        action = cls(**vars(head), headers=headers)
+        action.conn = conn
+        return action
 
     @classmethod
     async def _recv_head(cls, conn):
-        conn.reset_idle_timer()
-        buff = await conn.stream.read_bytes(cls.head_struct.size)
-        head = cls.Head(*cls.head_struct.unpack(buff))
-        debug(f'[RECV {conn.address}] Request  '
-              f'H: {int2hex(head.handler_id):<4} '
-              f'M: {int2hex(head.message_id):<4} '
-              f'L: {format_amount(head.data_len):<8}'
-              f'T: {Codec.codecs[head.data_type].type_name:<8} '
-              f'C: {Compressor.compressors[head.compression].type_name:<8}')
+        buff = await conn.read(cls.Head.struct.size)
+        head = cls.Head.unpack(buff)
+        conn.debug(f'[RECV {conn.address}] Request  '
+                   f'H: {int2hex(head.handler_id):<4} '
+                   f'M: {int2hex(head.message_id):<4} '
+                   f'L: {format_amount(head.data_len):<8}'
+                   f'T: {Codec.codecs[head.data_type].type_name:<8} '
+                   f'C: {Compressor.compressors[head.compression].type_name:<8}')
         return head
 
     async def send(self, conn):
+        self.conn = conn
         data, data_len, data_type, compression = await self._encode()
 
         try:
             message_headers = self.headers.encode() + self.HEADER_SEPARATOR
 
             _data_len = data_len + len(message_headers)
-            header = self.type_id + self.head_struct.pack(
+            header = self.type_id + self.Head(
                 self.handler_id,
                 self.message_id,
-                time_ns() // 1000000,
+                time_ns() // 1000_000,
                 data_type,
                 compression,
                 _data_len
-            ) + message_headers
+            ).pack() + message_headers
 
             async with conn.lock_write():
-                conn.reset_idle_timer()
-                await conn.stream.write(header)
-                debug(f'[SEND {conn.address}] Response '
-                      f'H: {int2hex(self.handler_id):<4} '
-                      f'M: {int2hex(self.message_id):<4} '
-                      f'L: {format_amount(_data_len):<8}'
-                      f'T: {Codec.codecs[data_type].type_name:<8} '
-                      f'C: {Compressor.compressors[compression].type_name:<8} ')
-                debug(f'[SEND {conn.address}] [{int2hex(self.message_id):<4}] -> HEADERS {self.headers}')
+                await conn.write(header)
+                conn.debug(f'[SEND {conn.address}] Response '
+                           f'H: {int2hex(self.handler_id):<4} '
+                           f'M: {int2hex(self.message_id):<4} '
+                           f'L: {format_amount(_data_len):<8}'
+                           f'T: {Codec.codecs[data_type].type_name:<8} '
+                           f'C: {Compressor.compressors[compression].type_name:<8} ')
+                conn.debug(f'[SEND {conn.address}] [{int2hex(self.message_id):<4}] -> HEADERS {self.headers}')
                 await self._write_data_to_stream(conn, data, data_len, data_type, compression)
         finally:
             if isinstance(data, Path):
@@ -419,15 +380,13 @@ class Action(BasicAction):
 
 class StreamAction(Action):
     type_id = b'\x01'
-    head_struct = Struct(f'{O_NETWORK}2{uInt2}{uInt8}2{uInt1}')
 
-    @dataclass
-    class Head:
-        handler_id: int
-        message_id: int
-        send_time: int
-        data_type: int
-        compression: int
+    class Head(struct_model.StructModel):
+        handler_id: struct_model.uInt2
+        message_id: struct_model.uInt2
+        send_time: struct_model.uInt8
+        data_type: struct_model.uInt1
+        compression: struct_model.uInt1
 
     def __init__(self, data=None, *, headers=None, status=None, message_id=None,
                  handler_id=None, data_type=None, compression=None,
@@ -439,10 +398,9 @@ class StreamAction(Action):
     @classmethod
     async def init(cls, conn):
         head = await cls._recv_head(conn)
-        headers_size = as_uint(await conn.stream.read_bytes(4))
-        headers = Headers.decode(await conn.stream.read_bytes(headers_size))
-        conn.reset_idle_timer()
-        debug(f'[RECV {conn.address}] [{int2hex(head.message_id):<4}] <- HEADERS {headers}')
+        headers_size = as_uint(await conn.read(4))
+        headers = Headers.decode(await conn.read(headers_size))
+        conn.debug(f'[RECV {conn.address}] [{int2hex(head.message_id):<4}] <- HEADERS {headers}')
 
         action = cls(**vars(head), headers=headers)
         action.conn = conn
@@ -450,14 +408,13 @@ class StreamAction(Action):
 
     @classmethod
     async def _recv_head(cls, conn):
-        conn.reset_idle_timer()
-        buff = await conn.stream.read_bytes(cls.head_struct.size)
-        head = cls.Head(*cls.head_struct.unpack(buff))
-        debug(f'[RECV {conn.address}] Stream   '
-              f'H: {int2hex(head.handler_id):<4} '
-              f'M: {int2hex(head.message_id):<4} '
-              f'T: {Codec.codecs[head.data_type].type_name:<8} '
-              f'C: {Compressor.compressors[head.compression].type_name:<8} ')
+        buff = await conn.read(cls.Head.struct.size)
+        head = cls.Head.unpack(buff)
+        conn.debug(f'[RECV {conn.address}] Stream   '
+                   f'H: {int2hex(head.handler_id):<4} '
+                   f'M: {int2hex(head.message_id):<4} '
+                   f'T: {Codec.codecs[head.data_type].type_name:<8} '
+                   f'C: {Compressor.compressors[head.compression].type_name:<8} ')
         return head
 
     async def recv_data(self):
@@ -465,17 +422,16 @@ class StreamAction(Action):
         buff = tmp_file()
         try:
             with buff.open('wb') as fh:
-                while chunk_size := as_uint(await self.conn.stream.read_bytes(4)):
-                    self.conn.reset_idle_timer()
+                while chunk_size := as_uint(await self.conn.read(4)):
                     if chunk_size > MAX_IN_MEMORY:
                         data_len += await self._recv_large_chunk(fh, chunk_size)
                     else:
                         data_len += await self._recv_small_chunk(fh, chunk_size)
 
-            if data_len > self.conn.MAX_PLAIN_DATA_SIZE:
+            if data_len > self.conn.conf.max_plain_payload:
                 if self.data_type != T_FILE:
                     raise ProtocolError(f'Attempted to send message larger than '
-                                        f'{format_amount(self.conn.MAX_PLAIN_DATA_SIZE)}')
+                                        f'{format_amount(self.conn.conf.max_plain_payload)}')
                 decode = buff
             elif self.data_type != T_FILE:
                 with buff.open('rb') as _fh:
@@ -483,7 +439,7 @@ class StreamAction(Action):
             self.data = await Codec.decode(decode, self.data_type, self.headers)
             self.data_len = data_len
         finally:
-            if fut := self.conn.recv_fut:
+            if fut := self.conn.recv_future:
                 fut.set_result(None)
             buff.unlink(missing_ok=True)
 
@@ -493,8 +449,9 @@ class StreamAction(Action):
         try:
             with part.open('wb') as tmp:
                 while left > 0:
-                    chunk = await self.conn.stream.read_bytes(min(left, MAX_CHUNK_READ), partial=True)
-                    debug(f'[RECV {self.conn.address}] [{int2hex(self.message_id):<4}] <- {bytes2hex(chunk[:64])}...')
+                    chunk = await self.conn.read(min(left, MAX_CHUNK_READ), partial=True)
+                    self.conn.debug(
+                        f'[RECV {self.conn.address}] [{int2hex(self.message_id):<4}] <- {bytes2hex(chunk[:64])}...')
                     left -= len(chunk)
                     tmp.write(chunk)
             await Compressor.decompress_file(part, dst, self.headers, compression=self.compression)
@@ -511,8 +468,8 @@ class StreamAction(Action):
         left = chunk_size
         part = bytearray()
         while left > 0:
-            chunk = await self.conn.stream.read_bytes(min(left, MAX_CHUNK_READ), partial=True)
-            debug(f'[RECV {self.conn.address}] [{int2hex(self.message_id):<4}] <- {bytes2hex(chunk[:64])}...')
+            chunk = await self.conn.read(min(left, MAX_CHUNK_READ), partial=True)
+            self.conn.debug(f'[RECV {self.conn.address}] [{int2hex(self.message_id):<4}] <- {bytes2hex(chunk[:64])}...')
             left -= len(chunk)
             part += chunk
         part = await Compressor.decompress(part, self.headers, compression=self.compression)
@@ -523,7 +480,7 @@ class StreamAction(Action):
         data = self.data
         compression = self.compression
         if compression is None:
-            compression = await Compressor.propose_compression(PROPOSAL_PLACEHOLDER)
+            compression = await Compressor.propose_compression(PROPOSAL_PLACEHOLDER, conn.default_compressor)
 
         assert hasattr(data, '__iter__') or hasattr(data, '__aiter__'), \
             'StreamResponse payload is not (Async)Generator[Bytes, None, None]'
@@ -531,53 +488,54 @@ class StreamAction(Action):
         return data, compression
 
     async def send(self, conn):
+        self.conn = conn
         data, compression = await self._encode_gen(conn)
 
-        header = self.type_id + self.head_struct.pack(
+        header = self.type_id + self.Head(
             self.handler_id,
             self.message_id,
-            time_ns() // 1000000,
+            time_ns() // 1000_000,
             self.data_type,
             compression
-        )
+        ).pack()
         message_headers = self.headers.encode()
 
         async with conn.lock_write():
-            conn.reset_idle_timer()
-            await conn.stream.write(header)
-            await conn.stream.write(to_uint(len(message_headers), 4))
-            await conn.stream.write(message_headers)
-            debug(f'[SEND {conn.address}] Stream   '
-                  f'H: {int2hex(self.handler_id):<4} '
-                  f'M: {int2hex(self.message_id):<4} '
-                  f'T: {Codec.codecs[self.data_type].type_name:<8} '
-                  f'C: {Compressor.compressors[compression].type_name:<8} ')
-            debug(f'[SEND {conn.address}] [{int2hex(self.message_id):<4}] -> HEADERS {self.headers}')
+            await conn.write(header)
+            await conn.write(to_uint(len(message_headers), 4))
+            await conn.write(message_headers)
+            conn.debug(f'[SEND {conn.address}] Stream   '
+                       f'H: {int2hex(self.handler_id):<4} '
+                       f'M: {int2hex(self.message_id):<4} '
+                       f'T: {Codec.codecs[self.data_type].type_name:<8} '
+                       f'C: {Compressor.compressors[compression].type_name:<8} ')
+            conn.debug(f'[SEND {conn.address}] [{int2hex(self.message_id):<4}] -> HEADERS {self.headers}')
             await self._write_data_to_stream(conn, data, compression=compression)
 
     async def _write_data_to_stream(self, conn, data, *_, compression):
         offset = self.offset
-        with Delay(conn.download_speed) as delay:
-            async for chunk in data:
-                if offset > 0:
-                    offset -= (i := min(offset, len(chunk)))
-                    chunk = chunk[i:]
-                if not chunk:
-                    continue
-                if not isinstance(chunk, (bytes, bytearray, memoryview)):
-                    raise MalformedDataError('Provided data chunk is not binary')
+        delay = Delay(conn.download_speed)
+        async for chunk in data:
+            if offset > 0:
+                offset -= (i := min(offset, len(chunk)))
+                chunk = chunk[i:]
+            if not chunk:
+                continue
+            if not isinstance(chunk, Bytes):
+                raise MalformedDataError('Provided data chunk is not binary')
 
-                chunk, _ = await Compressor.compress(chunk, self.headers, compression)
-                chunk_size = len(chunk)
-                if chunk_size >= 1 << 32:
-                    raise ProtocolError('Provided data chunk exceeded max chunk size')
+            chunk, _ = await Compressor.compress(chunk, self.headers,
+                                                 conn.allowed_compressors, conn.default_compressor,
+                                                 compression)
+            chunk_size = len(chunk)
+            if chunk_size >= 1 << 32:
+                raise ProtocolError('Provided data chunk exceeded max chunk size')
 
-                await delay(chunk_size + 4)
-                conn.reset_idle_timer()
-                await conn.stream.write(to_uint(chunk_size, 4))
-                await conn.stream.write(chunk)
-                debug(f'[SEND {conn.address}] [{int2hex(self.message_id):<4}] -> {bytes2hex(chunk[:64])}...')
-        await conn.stream.write(b'\x00\x00\x00\x00')
+            await delay(chunk_size + 4)
+            await conn.write(to_uint(chunk_size, 4))
+            await conn.write(chunk)
+            conn.debug(f'[SEND {conn.address}] [{int2hex(self.message_id):<4}] -> {bytes2hex(chunk[:64])}...')
+        await conn.write(b'\x00\x00\x00\x00')
 
     async def _async_gen(self, gen, chunk_size):
         size = max(chunk_size, MAX_IN_MEMORY) or MAX_IN_MEMORY
@@ -596,95 +554,71 @@ class StreamAction(Action):
                f'data_type={self.data_type}, compression={self.compression}'
 
 
-class InputAction(BasicAction):
+class InputAction(Action):
     type_id = b'\x02'
-    head_struct = Struct(f'{O_NETWORK}{uInt2}2{uInt1}{uInt4}')
 
-    @dataclass
-    class Head:
-        message_id: int
-        data_type: int
-        compression: int
-        data_len: int
-
-    @classmethod
-    async def init(cls, conn):
-        head = await cls._recv_head(conn)
-        headers = await conn.stream.read_until(cls.HEADER_SEPARATOR, head.data_len)
-        conn.reset_idle_timer()
-        head.data_len -= len(headers)
-        headers = Headers.decode(headers[:-2])
-        debug(f'[RECV {conn.address}] [{int2hex(head.message_id):<4}] <- HEADERS {headers}')
-
-        action = cls(**vars(head), headers=headers)
-        action.conn = conn
-        return action
+    class Head(struct_model.StructModel):
+        message_id: struct_model.uInt2
+        data_type: struct_model.uInt1
+        compression: struct_model.uInt1
+        data_len: struct_model.uInt4
 
     @classmethod
     async def _recv_head(cls, conn):
-        conn.reset_idle_timer()
-        buff = await conn.stream.read_bytes(cls.head_struct.size)
-        head = cls.Head(*cls.head_struct.unpack(buff))
-        debug(f'[RECV {conn.address}] Answer   '
-              f'M: {int2hex(head.message_id):<4} '
-              f'L: {format_amount(head.data_len):<8}'
-              f'T: {Codec.codecs[head.data_type].type_name:<8} '
-              f'C: {Compressor.compressors[head.compression].type_name:<8} ')
+        buff = await conn.read(cls.Head.struct.size)
+        head = cls.Head.unpack(buff)
+        conn.debug(f'[RECV {conn.address}] Answer   '
+                   f'M: {int2hex(head.message_id):<4} '
+                   f'L: {format_amount(head.data_len):<8}'
+                   f'T: {Codec.codecs[head.data_type].type_name:<8} '
+                   f'C: {Compressor.compressors[head.compression].type_name:<8} ')
         return head
 
-    async def handle(self):
-        await self.recv_data()
-        if inp := self.conn.input_deq.get(self.message_id, None):
-            inp.future.set_result(self)
-            inp.cancel()
-        else:
-            raise ProtocolError('Received answer but input does`t exists')
-
     async def send(self, conn):
+        self.conn = conn
         data, data_len, data_type, compression = await self._encode()
         try:
             message_headers = self.headers.encode() + self.HEADER_SEPARATOR
             _data_len = data_len + len(message_headers)
-            header = self.type_id + self.head_struct.pack(
+            header = self.type_id + self.Head(
                 self.message_id,
                 data_type,
                 compression,
                 _data_len
-            ) + message_headers
+            ).pack() + message_headers
 
             async with conn.lock_write():
-                conn.reset_idle_timer()
-                await conn.stream.write(header)
-                debug(f'[SEND {conn.address}] Input    '
-                      f'M: {int2hex(self.message_id):<4} '
-                      f'L: {format_amount(_data_len):<8}'
-                      f'T: {Codec.codecs[data_type].type_name:<8} '
-                      f'C: {Compressor.compressors[compression].type_name:<8} ')
-                debug(f'[SEND {conn.address}] [{int2hex(self.message_id):<4}] -> HEADERS {self.headers}')
+                await conn.write(header)
+                conn.debug(f'[SEND {conn.address}] Input    '
+                           f'M: {int2hex(self.message_id):<4} '
+                           f'L: {format_amount(_data_len):<8}'
+                           f'T: {Codec.codecs[data_type].type_name:<8} '
+                           f'C: {Compressor.compressors[compression].type_name:<8} ')
+                conn.debug(f'[SEND {conn.address}] [{int2hex(self.message_id):<4}] -> HEADERS {self.headers}')
                 await self._write_data_to_stream(conn, data, data_len, data_type, compression)
         finally:
             if isinstance(data, Path):
                 data.unlink(missing_ok=True)
 
     async def reply(self, data=None, data_type=None, compression=None, *,
-                    headers=None, status=None):
+                    headers=None, status=None) -> Action | None:
         action = InputAction(data, headers=headers, status=status, message_id=self.message_id,
                              data_type=data_type, compression=compression)
         action.offset = self.offset
         await action.send(self.conn)
+        return await self.conn.recv(self.message_id)  # noqa
 
-    async def cancel(self):
+    async def cancel(self) -> Action | None:
         res = CancelInputAction(self.message_id)
         await res.send(self.conn)
+        return await self.conn.recv(self.message_id)  # noqa
 
 
 class DownloadSpeedAction(BaseAction):
     type_id = b'\x05'
-    head_struct = Struct(f'{O_NETWORK}{uInt4}')
 
-    @dataclass
-    class Head:
-        speed: int
+    class Head(struct_model.StructModel):
+        speed: struct_model.uInt4
 
     def __init__(self, speed):
         super().__init__()
@@ -692,28 +626,18 @@ class DownloadSpeedAction(BaseAction):
 
     @classmethod
     async def init(cls, conn):
-        conn.reset_idle_timer()
-        buff = await conn.stream.read_bytes(cls.head_struct.size)
-        head = cls.Head(*cls.head_struct.unpack(buff))
-        debug(f'[RECV {conn.address}] SET Download speed: {format_amount(head.speed)}')
+        buff = await conn.read(cls.Head.struct.size)
+        head = cls.Head.unpack(buff)
+        conn.debug(f'[RECV {conn.address}] SET Download speed: {format_amount(head.speed)}')
         action = cls(**vars(head))
         action.conn = conn
         return action
 
-    async def handle(self):
-        limit = self.speed
-        if not limit or (1024 <= limit <= 33_554_432):
-            self.conn.download_speed = limit
-        else:
-            raise ProtocolError('Unsupported download speed limit')
-        await self.dump_data(0)
-
     async def send(self, conn):
         async with conn.lock_write():
-            conn.reset_idle_timer()
             speed: int = self.data
-            await conn.stream.write(self.type_id + to_uint(speed, 4))
-            debug(f'[SEND {conn.address}] SET Download speed: {format_amount(speed)}')
+            await conn.write(self.type_id + to_uint(speed, 4))
+            conn.debug(f'[SEND {conn.address}] SET Download speed: {format_amount(speed)}')
 
     def __repr__(self):
         return f'{type(self).__name__}(speed={self.speed})'
@@ -721,70 +645,52 @@ class DownloadSpeedAction(BaseAction):
 
 class CancelInputAction(BaseAction):
     type_id = b'\x06'
-    head_struct = Struct(f'{O_NETWORK}{uInt2}')
 
-    @dataclass
-    class Head:
-        message_id: int
+    class Head(struct_model.StructModel):
+        message_id: struct_model.uInt2
 
     @classmethod
     async def init(cls, conn):
-        conn.reset_idle_timer()
-        buff = await conn.stream.read_bytes(cls.head_struct.size)
-        head = cls.Head(*cls.head_struct.unpack(buff))
-        debug(f'[RECV {conn.address}] CANCEL Input M: {int2hex(head.message_id):<4}')
+        buff = await conn.read(cls.Head.struct.size)
+        head = cls.Head.unpack(buff)
+        conn.debug(f'[RECV {conn.address}] CANCEL Input M: {int2hex(head.message_id):<4}')
         action = cls(**vars(head))
         action.conn = conn
         return action
 
-    async def handle(self):
-        if self.message_id in self.conn.input_deq:
-            self.conn.input_deq[self.message_id].cancel()
-        await self.dump_data(0)
-
     async def send(self, conn):
         async with conn.lock_write():
-            conn.reset_idle_timer()
             message_id: int = self.data
-            await conn.stream.write(self.type_id + to_uint(message_id, 2))
-            debug(f'[SEND {conn.address}] CANCEL Input M: {message_id}')
+            await conn.write(self.type_id + to_uint(message_id, 2))
+            conn.debug(f'[SEND {conn.address}] CANCEL Input M: {message_id}')
 
 
 class PingAction(BaseAction):
     type_id = b'\xFF'
-    head_struct = Struct(f'{O_NETWORK}{uInt8}')
 
-    @dataclass
-    class Head:
-        send_time: int
+    class Head(struct_model.StructModel):
+        send_time: struct_model.uInt8
 
     def __init__(self, send_time=None):
         super().__init__()
-        self.recv_time = time_ns() // 1000000
+        self.recv_time = time_ns() // 1000_000
         self.send_time = send_time or self.recv_time
 
     @classmethod
     async def init(cls, conn):
-        conn.reset_idle_timer()
-        buff = await conn.stream.read_bytes(cls.head_struct.size)
-        head = cls.Head(*cls.head_struct.unpack(buff))
-        debug(f'[PING {conn.address}] {head.send_time}')
+        buff = await conn.read(cls.Head.struct.size)
+        head = cls.Head.unpack(buff)
+        conn.debug(f'[PING {conn.address}] {head.send_time}')
 
         action = cls(**vars(head))
         action.conn = conn
         return action
 
-    async def handle(self):
-        debug(f'Ping {self.send_time} [-] {self.recv_time}')
-        await self.send(self.conn)
-        await self.dump_data(0)
-
     async def send(self, conn):
         async with conn.lock_write():
-            conn.reset_idle_timer()
-            now = time_ns() // 1000000
-            await conn.stream.write(self.type_id + to_uint(now, 8))
-            debug(f'[SEND {conn.address}] PONG {now}')
+            now = time_ns() // 1000_000
+            await conn.write(self.type_id + to_uint(now, 8))
+            conn.debug(f'[SEND {conn.address}] PONG {now}')
 
     def __repr__(self):
         return f'{type(self).__name__}(send_time={self.send_time})'

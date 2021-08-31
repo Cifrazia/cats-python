@@ -5,8 +5,10 @@
       <excludeFolder url="file://$MODULE_DIR$/.venv" />
       <excludeFolder url="file://$MODULE_DIR$/dist" />
       <excludeFolder url="file://$MODULE_DIR$/build" />
+      <excludeFolder url="file://$MODULE_DIR$/.pytest_cache" />
+      <excludeFolder url="file://$MODULE_DIR$/.retype" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 3.9 (cats-python)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.10 (cats-python)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>

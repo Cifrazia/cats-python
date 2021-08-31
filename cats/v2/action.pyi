@@ -1,13 +1,13 @@
 import asyncio
-from dataclasses import dataclass
 from logging import getLogger
 from pathlib import Path
-from struct import Struct
 from time import time_ns
-from typing import Any, AsyncIterator, Optional, Type, Union
+from typing import AsyncIterator, Type
 
-from cats.server.conn import Connection
+import struct_model
+
 from cats.types import BytesAnyGen, BytesAsyncGen, Headers, T_Headers
+from cats.v2.connection import Connection
 
 __all__ = [
     'Input',
@@ -35,14 +35,16 @@ class Input:
                  conn: Connection,
                  message_id: int,
                  bypass_count: bool = False,
-                 timeout: Union[float, int] = None):
-        self.timer: Optional[asyncio.Task]
+                 timeout: float | int = None):
+        self.timer: asyncio.Task | None
         self.future: asyncio.Future = future
         self.conn: Connection = conn
         self.message_id: int = message_id
         self.bypass_count: bool = bypass_count
         if timeout:
             self.timer = asyncio.get_event_loop().call_later(timeout, self.cancel)
+
+    def done(self, result) -> None: ...
 
     def cancel(self) -> None: ...
 
@@ -53,30 +55,28 @@ class BaseAction(dict):
     HEADER_SEPARATOR = b'\x00\x00'
 
     type_id: bytes
-    head_struct: Struct
-    Head: Type
+    Head: type
+    status: property | int
+    offset: property | int
 
-    def __init__(self, data: Any = None, *, headers: T_Headers = None, status: int = None,
+    def __init__(self, data=None, *, headers: T_Headers = None, status: int = None,
                  message_id: int = None):
-        self.data: Any = data
+        self.data = data
         self.headers: Headers = Headers(headers or {})
         self.status: int = self.headers.get('Status', status or 200)
-        self.message_id: Optional[int] = message_id
-        self.conn: Optional[Connection] = None
+        self.message_id: int | None = message_id
+        self.conn: Connection | None = None
         super().__init__()
 
-    def __init_subclass__(cls, *, type_id: int = 0, struct: Struct = None, abstract: bool = False) -> None: ...
-
-    status: Union[property, int]
-    offset: Union[property, int]
+    def __init_subclass__(cls, *, abstract: bool = False) -> None: ...
 
     @classmethod
-    def get_class_by_type_id(cls, type_id: bytes) -> Optional[Type['BaseAction']]: ...
+    def get_class_by_type_id(cls, type_id: bytes) -> Type['BaseAction'] | None: ...
 
-    async def ask(self, data: Any = None, data_type: int = None, compression: int = None, *,
+    async def ask(self, data=None, data_type: int = None, compression: int = None, *,
                   headers: T_Headers = None, status: int = None,
                   bypass_limit: bool = False, bypass_count: bool = False,
-                  timeout: Union[int, float] = None) -> 'InputAction': ...
+                  timeout: int | float = None) -> 'InputAction': ...
 
     @classmethod
     async def init(cls, conn: Connection) -> 'BaseAction': ...
@@ -86,8 +86,6 @@ class BaseAction(dict):
 
     async def dump_data(self, size: int) -> None: ...
 
-    async def handle(self) -> None: ...
-
     async def send(self, conn: Connection) -> None: ...
 
     def __repr__(self) -> str: ...
@@ -96,13 +94,13 @@ class BaseAction(dict):
 class BasicAction(BaseAction):
     __slots__ = ('data_len', 'data_type', 'compression', 'encoded')
 
-    def __init__(self, data: Any = None, *, headers: T_Headers = None, status: int = None,
+    def __init__(self, data=None, *, headers: T_Headers = None, status: int = None,
                  message_id: int = None, data_len: int = None, data_type: int = None, compression: int = None,
                  encoded: int = None):
-        self.data_len: Optional[int] = data_len
-        self.data_type: Optional[int] = data_type
-        self.compression: Optional[int] = compression
-        self.encoded: Optional[int] = encoded
+        self.data_len: int | None = data_len
+        self.data_type: int | None = data_type
+        self.compression: int | None = compression
+        self.encoded: int | None = encoded
         super().__init__(data, headers=headers, status=status, message_id=message_id)
 
     async def recv_data(self) -> None: ...
@@ -113,30 +111,29 @@ class BasicAction(BaseAction):
 
     async def _recv_chunk(self, left: int) -> (bytes, int): ...
 
-    async def _encode(self) -> tuple[Union[Path, bytes], int, int, int]: ...
+    async def _encode(self) -> tuple[Path | bytes, int, int, int]: ...
 
-    async def _write_data_to_stream(self, conn: Connection, data: Union[Path, bytes],
+    async def _write_data_to_stream(self, conn: Connection, data: Path | bytes,
                                     data_len: int, data_type: int, compression: int) -> None: ...
 
     def __repr__(self) -> str: ...
 
 
 class Action(BasicAction):
-    @dataclass
-    class Head:
-        handler_id: int
-        message_id: int
-        send_time: int
-        data_type: int
-        compression: int
-        data_len: int
+    class Head(struct_model.StructModel):
+        handler_id: struct_model.uInt2
+        message_id: struct_model.uInt2
+        send_time: struct_model.uInt8
+        data_type: struct_model.uInt1
+        compression: struct_model.uInt1
+        data_len: struct_model.uInt4
 
     __slots__ = ('handler_id', 'send_time')
 
-    def __init__(self, data: Any = None, *, headers: T_Headers = None, status: int = None, message_id: int = None,
+    def __init__(self, data=None, *, headers: T_Headers = None, status: int = None, message_id: int = None,
                  handler_id: int = None, data_len: int = None, data_type: int = None, compression: int = None,
                  send_time: float = None, encoded: int = None):
-        self.handler_id: Optional[int] = handler_id
+        self.handler_id: int | None = handler_id
         self.send_time = send_time or (time_ns() // 1000000)
         super().__init__(data, headers=headers, status=status, message_id=message_id,
                          data_len=data_len, data_type=data_type, compression=compression, encoded=encoded)
@@ -147,23 +144,20 @@ class Action(BasicAction):
     @classmethod
     async def _recv_head(cls, conn: Connection) -> 'Action.Head': ...
 
-    async def handle(self) -> None: ...
-
     async def send(self, conn: Connection) -> None: ...
 
     def __repr__(self) -> str: ...
 
 
 class StreamAction(Action):
-    @dataclass
-    class Head:
-        handler_id: int
-        message_id: int
-        send_time: int
-        data_type: int
-        compression: int
+    class Head(struct_model.StructModel):
+        handler_id: struct_model.uInt2
+        message_id: struct_model.uInt2
+        send_time: struct_model.uInt8
+        data_type: struct_model.uInt1
+        compression: struct_model.uInt1
 
-    def __init__(self, data: Any = None, *, headers: T_Headers = None, status: int = None, message_id: int = None,
+    def __init__(self, data=None, *, headers: T_Headers = None, status: int = None, message_id: int = None,
                  handler_id: int = None, data_type: int = None, compression: int = None,
                  send_time: float = None):
         super().__init__(data, headers=headers, status=status, message_id=message_id,
@@ -175,8 +169,6 @@ class StreamAction(Action):
 
     @classmethod
     async def _recv_head(cls, conn: Connection) -> 'StreamAction.Head': ...
-
-    async def handle(self) -> None: ...
 
     async def recv_data(self) -> None: ...
 
@@ -196,12 +188,11 @@ class StreamAction(Action):
 
 
 class InputAction(BasicAction):
-    @dataclass
-    class Head:
-        message_id: int
-        data_type: int
-        compression: int
-        data_len: int
+    class Head(struct_model.StructModel):
+        message_id: struct_model.uInt2
+        data_type: struct_model.uInt1
+        compression: struct_model.uInt1
+        data_len: struct_model.uInt4
 
     @classmethod
     async def init(cls, conn: Connection) -> 'InputAction': ...
@@ -209,20 +200,17 @@ class InputAction(BasicAction):
     @classmethod
     async def _recv_head(cls, conn: Connection) -> 'InputAction.Head': ...
 
-    async def handle(self) -> None: ...
-
     async def send(self, conn: Connection) -> None: ...
 
-    async def reply(self, data: Any = None, data_type: int = None, compression: int = None, *,
-                    headers: T_Headers = None, status: int = None) -> None: ...
+    async def reply(self, data=None, data_type: int = None, compression: int = None, *,
+                    headers: T_Headers = None, status: int = None) -> Action | None: ...
 
-    async def cancel(self) -> None: ...
+    async def cancel(self) -> Action | None: ...
 
 
 class DownloadSpeedAction(BaseAction):
-    @dataclass
-    class Head:
-        speed: int
+    class Head(struct_model.StructModel):
+        speed: struct_model.uInt4
 
     def __init__(self, speed: int):
         super().__init__()
@@ -234,17 +222,14 @@ class DownloadSpeedAction(BaseAction):
     @classmethod
     async def _recv_head(cls, conn: Connection) -> 'DownloadSpeedAction.Head': ...
 
-    async def handle(self) -> None: ...
-
     async def send(self, conn: Connection) -> None: ...
 
     def __repr__(self) -> str: ...
 
 
 class CancelInputAction(BaseAction):
-    @dataclass
-    class Head:
-        message_id: int
+    class Head(struct_model.StructModel):
+        message_id: struct_model.uInt2
 
     @classmethod
     async def init(cls, conn: Connection) -> 'CancelInputAction': ...
@@ -252,15 +237,12 @@ class CancelInputAction(BaseAction):
     @classmethod
     async def _recv_head(cls, conn: Connection) -> 'CancelInputAction.Head': ...
 
-    async def handle(self) -> None: ...
-
     async def send(self, conn: Connection) -> None: ...
 
 
 class PingAction(BaseAction):
-    @dataclass
-    class Head:
-        send_time: int
+    class Head(struct_model.StructModel):
+        send_time: struct_model.uInt8
 
     def __init__(self, send_time: int = None):
         super().__init__()
@@ -272,8 +254,6 @@ class PingAction(BaseAction):
 
     @classmethod
     async def _recv_head(cls, conn: Connection) -> 'PingAction.Head': ...
-
-    async def handle(self) -> None: ...
 
     async def send(self, conn: Connection) -> None: ...
 

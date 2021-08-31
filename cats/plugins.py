@@ -1,8 +1,8 @@
-from typing import Type, TypeVar, Union
+from typing import Type, TypeAlias, TypeVar
 
-import orjson
+import ujson
 
-from cats.types import Missing, Model, QuerySet
+from cats.types import Json, Missing, Model, QuerySet
 
 try:
     from rest_framework.serializers import BaseSerializer
@@ -34,15 +34,15 @@ __all__ = [
     'scheme_json',
 ]
 
-Scheme = Union[Type[BaseModel], Type[BaseSerializer], Type[ModelSchema]]
-SchemeTypes = (BaseModel, BaseSerializer, ModelSchema)
+Scheme: TypeAlias = Type[BaseModel] | Type[BaseSerializer] | Type[ModelSchema]
+SchemeTypes = BaseModel, BaseSerializer, ModelSchema
 PydanticModel = TypeVar('PydanticModel', bound=BaseModel)
 DRFModel = TypeVar('DRFModel', bound=BaseSerializer)
 DjanticModel = TypeVar('DjanticModel', bound=ModelSchema)
-Form = Union[PydanticModel, DRFModel, DjanticModel]
+Form: TypeAlias = PydanticModel | DRFModel | DjanticModel
 
 
-def without_missing(obj):
+def without_missing(obj) -> Json | None:
     if _items := getattr(obj, 'items', None):
         return {k: without_missing(v) for k, v in _items() if not isinstance(v, Missing)}
     if isinstance(obj, (list, set, tuple)):
@@ -54,7 +54,7 @@ def without_missing(obj):
 
 class DRF:
     @classmethod
-    def load(cls, s: Type[BaseSerializer], data, *, many: bool = False, plain: bool = False):
+    def load(cls, s: Type[BaseSerializer], data: Json, *, many: bool = False, plain: bool = False) -> Json | DRFModel:
         f = s(data=data, many=many)
         f.is_valid(raise_exception=True)
         if plain:
@@ -62,20 +62,22 @@ class DRF:
         return without_missing(f.validated_data)
 
     @classmethod
-    def dump(cls, s: Type[BaseSerializer], data, *, many: bool = False, plain: bool = False):
+    def dump(cls, s: Type[BaseSerializer], data: Json | DRFModel, *, many: bool = False, plain: bool = False) -> Json:
         if plain:
             assert isinstance(data, s)
             return data.data
         return s(data, many=many).data
 
     @classmethod
-    def json(cls, s: Type[BaseSerializer], data, *, many: bool = False, plain: bool = False) -> bytes:
-        return orjson.dumps(cls.dump(s, data, many=many, plain=plain))
+    def json(cls, s: Type[BaseSerializer], data: Json | DRFModel, *, many: bool = False, plain: bool = False) -> bytes:
+        obj = cls.dump(s, data, many=many, plain=plain)
+        dump: str = ujson.dumps(obj, ensure_ascii=False, escape_forward_slashes=False)
+        return dump.encode('utf-8')
 
 
 class Pydantic:
     @classmethod
-    def load(cls, s: Type[BaseModel], data, *, many: bool = False, plain: bool = False):
+    def load(cls, s: Type[BaseModel], data: Json, *, many: bool = False, plain: bool = False) -> Json | PydanticModel:
         if many:
             return [cls.load(s, i, many=False, plain=plain) for i in data]
 
@@ -86,7 +88,7 @@ class Pydantic:
         return without_missing(res.dict())
 
     @classmethod
-    def dump(cls, s: Type[BaseModel], data, *, many: bool = False, plain: bool = False):
+    def dump(cls, s: Type[BaseModel], data: Json | PydanticModel, *, many: bool = False, plain: bool = False) -> Json:
         if many:
             return [cls.dump(s, i, many=False, plain=plain) for i in data]
 
@@ -99,7 +101,7 @@ class Pydantic:
         return data.dict()
 
     @classmethod
-    def json(cls, s: Type[BaseModel], data, *, many: bool = False, plain: bool = False) -> bytes:
+    def json(cls, s: Type[BaseModel], data: Json | PydanticModel, *, many: bool = False, plain: bool = False) -> bytes:
         if many:
             return b'[' + b','.join(cls.json(s, i, many=False, plain=plain) for i in data) + b']'
 
@@ -117,7 +119,7 @@ class Pydantic:
 
 class Djantic(Pydantic):
     @classmethod
-    def dump(cls, s: Type[ModelSchema], data, *, many: bool = False, plain: bool = False):
+    def dump(cls, s: Type[ModelSchema], data: Json, *, many: bool = False, plain: bool = False) -> Json | DjanticModel:
         if many:
             return [cls.dump(s, i, many=False, plain=plain) for i in data]
 
@@ -131,7 +133,7 @@ class Djantic(Pydantic):
         return data.json()
 
     @classmethod
-    def json(cls, s: Type[ModelSchema], data, *, many: bool = False, plain: bool = False) -> bytes:
+    def json(cls, s: Type[ModelSchema], data: Json | DjanticModel, *, many: bool = False, plain: bool = False) -> bytes:
         if many:
             return b'[' + b','.join(cls.json(s, i, many=False, plain=plain) for i in data) + b']'
 
@@ -148,7 +150,7 @@ class Djantic(Pydantic):
         return res.encode('utf-8')
 
 
-def _resolve_scheme_type(scheme: Scheme):
+def _resolve_scheme_type(scheme: Scheme) -> Type[DRF] | Type[Djantic] | Type[Pydantic]:
     if issubclass(scheme, BaseSerializer):
         return DRF
     elif issubclass(scheme, ModelSchema):
@@ -159,13 +161,13 @@ def _resolve_scheme_type(scheme: Scheme):
         raise TypeError('Unsupported scheme')
 
 
-def scheme_load(scheme: Scheme, data, *, many: bool = False, plain: bool = False):
+def scheme_load(scheme: Scheme, data: Json, *, many: bool = False, plain: bool = False) -> Json | Form:
     return _resolve_scheme_type(scheme).load(scheme, data, many=many, plain=plain)
 
 
-def scheme_dump(scheme: Scheme, data, *, many: bool = False, plain: bool = False):
+def scheme_dump(scheme: Scheme, data: Json | Form, *, many: bool = False, plain: bool = False) -> Json:
     return _resolve_scheme_type(scheme).dump(scheme, data, many=many, plain=plain)
 
 
-def scheme_json(scheme: Scheme, data, *, many: bool = False, plain: bool = False) -> bytes:
+def scheme_json(scheme: Scheme, data: Json | Form, *, many: bool = False, plain: bool = False) -> bytes:
     return _resolve_scheme_type(scheme).json(scheme, data, many=many, plain=plain)

@@ -2,9 +2,9 @@ from dataclasses import dataclass
 from io import BytesIO
 from os.path import getsize
 from pathlib import Path
-from typing import Any, IO, Optional, Union
+from typing import IO, TypeAlias
 
-import orjson
+import ujson
 
 from cats.plugins import BaseModel, BaseSerializer, Form, ModelSchema, scheme_json
 from cats.types import Byte, Json, List, T_Headers
@@ -29,7 +29,7 @@ class FileInfo:
     name: str
     path: Path
     size: int
-    mime: Optional[str]
+    mime: str | None
 
 
 class Files(dict):
@@ -51,7 +51,7 @@ class BaseCodec:
     type_name: str
 
     @classmethod
-    async def encode(cls, data: Any, headers: T_Headers) -> bytes:
+    async def encode(cls, data, headers: T_Headers) -> bytes:
         """
         :raise TypeError: Encoder doesn't support this type
         :raise ValueError: Failed to encode
@@ -59,7 +59,7 @@ class BaseCodec:
         raise NotImplementedError
 
     @classmethod
-    async def decode(cls, data: Union[bytes, Path], headers: T_Headers) -> Any:
+    async def decode(cls, data: bytes | Path, headers: T_Headers):
         """
         :raise TypeError: Encoder doesn't support this type
         :raise ValueError: Failed to decode
@@ -73,7 +73,7 @@ class ByteCodec(BaseCodec):
 
     @classmethod
     async def encode(cls, data: Byte, headers: T_Headers, offset: int = 0) -> bytes:
-        if data is not None and not isinstance(data, (bytes, bytearray, memoryview)):
+        if data is not None and not isinstance(data, Byte):
             raise TypeError(f'{cls.__name__} does not support {type(data).__name__}')
 
         return (bytes(data) if data else bytes())[offset:]
@@ -83,15 +83,12 @@ class ByteCodec(BaseCodec):
         return bytes(data) if data else bytes()
 
 
-JSON = Union[Json, Form, list[Form]]
-
-
 class JsonCodec(BaseCodec):
     type_id = 0x01
     type_name = 'json'
 
     @classmethod
-    async def encode(cls, data: JSON, headers: T_Headers, offset: int = 0) -> bytes:
+    async def encode(cls, data: Json | Form | list[Form], headers: T_Headers, offset: int = 0) -> bytes:
         if data:
             if isinstance(data, (BaseModel, BaseSerializer, ModelSchema)):
                 return scheme_json(type(data), data, many=False, plain=True)
@@ -106,23 +103,20 @@ class JsonCodec(BaseCodec):
         if not isinstance(data, (str, int, float, dict, list, bool, type(None))):
             raise TypeError(f'{cls.__name__} does not support {type(data).__name__}')
 
-        return orjson.dumps(data)[offset:]
+        return ujson.dumps(data, ensure_ascii=False, escape_forward_slashes=False).encode('utf-8')[offset:]
 
     @classmethod
-    async def decode(cls, data: bytes, headers) -> Union[dict, Json]:
+    async def decode(cls, data: bytes, headers) -> Json:
         if not data:
             return {}
 
         try:
-            return orjson.loads(data)
+            return ujson.loads(data.decode('utf-8'))
         except ValueError:
             raise ValueError('Failed to parse JSON from data')
 
 
-FILE_TYPES = Union[
-    Path, list[Path], dict[str, Path],
-    FileInfo, list[FileInfo], dict[str, FileInfo],
-]
+FILE_TYPES: TypeAlias = Path | list[Path] | dict[str, Path] | FileInfo | list[FileInfo] | dict[str, FileInfo]
 
 
 class FileCodec(BaseCodec):
@@ -192,7 +186,7 @@ class FileCodec(BaseCodec):
             raise TypeError(f'{cls.__name__} does not support {type(data).__name__}')
 
     @classmethod
-    async def decode(cls, data: Union[Path, bytes, bytearray], headers) -> Files:
+    async def decode(cls, data: Path | bytes | bytearray, headers) -> Files:
         result = Files()
         buff = data.open('rb') if isinstance(data, Path) else BytesIO(data)
 
@@ -252,7 +246,7 @@ class Codec:
     }
 
     @classmethod
-    async def encode(cls, buff: Union[Byte, Json, FILE_TYPES], headers: T_Headers, offset: int = 0) -> (bytes, int):
+    async def encode(cls, buff: Byte | Json | FILE_TYPES, headers: T_Headers, offset: int = 0) -> (bytes, int):
         """
         Takes any supported data type and returns tuple (encoded: bytes, type_id: int)
         """
@@ -266,7 +260,7 @@ class Codec:
         raise TypeError(f'Failed to encode data: Type {type(buff).__name__} not supported')
 
     @classmethod
-    async def decode(cls, buff: Union[Byte, Path], data_type: int, headers: T_Headers) -> Union[Byte, Json, Files]:
+    async def decode(cls, buff: Byte | Path, data_type: int, headers: T_Headers) -> Byte | Json | Files:
         """
         Takes byte buffer, type_id and try to decode it to internal data types
         """

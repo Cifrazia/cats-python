@@ -1,9 +1,10 @@
 from collections import defaultdict
-from typing import DefaultDict, Iterable, Optional, Union
+from typing import Iterable, Type
 
-from cats.server.conn import Connection
-from cats.server.handlers import Api, Handler, HandlerItem
-from cats.server.middleware import Middleware, default_error_handler
+from cats.v2.config import Config
+from cats.v2.connection import Connection
+from cats.v2.server.handlers import Api, Handler, HandlerItem, override_run
+from cats.v2.server.middleware import Middleware, default_error_handler
 
 __all__ = [
     'Application',
@@ -11,31 +12,29 @@ __all__ = [
 
 
 class Application:
-    __slots__ = ('_handlers', '_middleware', '_channels', 'idle_timeout', 'input_timeout')
-    INPUT_LIMIT: int = 3
+    __slots__ = ('config', 'ConnectionClass', '_handlers', '_channels')
 
-    def __init__(self, apis: list[Api], middleware: list[Middleware] = None, *,
-                 idle_timeout: Union[int, float] = None, input_timeout: Union[int, float] = None):
+    def __init__(self, apis: list[Api], middleware: list[Middleware] = None, *, config: Config = None,
+                 connection: Type[Connection] = None):
+        self.config = Config() if config is None else config
+        self.ConnectionClass = connection
         if middleware is None:
             middleware = [
                 default_error_handler,
             ]
-
-        self._middleware = middleware
-        self._channels: DefaultDict[str, list[Connection]] = defaultdict(list)
-        self.idle_timeout: Union[int, float] = idle_timeout or 0
-        self.input_timeout: Union[int, float] = input_timeout or 0
+        self._channels: dict[str, list[Connection]] = defaultdict(list)
 
         api = Api()
         for i in apis:
             api.update(i)
 
         self._handlers = api.compute()
+        override_run(middleware)
 
-    def get_handlers_by_id(self, handler_id: int) -> Optional[Union[list[HandlerItem], HandlerItem]]:
+    def get_handlers_by_id(self, handler_id: int) -> list[HandlerItem] | HandlerItem | None:
         return self._handlers.get(handler_id)
 
-    def get_handler_id(self, handler: Handler) -> Optional[int]:
+    def get_handler_id(self, handler: Handler) -> int | None:
         return handler.handler_id
 
     def channels(self) -> list[str]:
@@ -63,7 +62,3 @@ class Application:
     def remove_conn_from_channels(self, conn: Connection) -> None:
         for channel_name in self.channels():
             self.detach_conn_from_channel(conn, channel_name)
-
-    @property
-    def middleware(self) -> Iterable[Middleware]:
-        return iter(self._middleware)

@@ -12,21 +12,24 @@ icon: codespaces
 ## Initialisation
 
 1. After connecting via `TCP` to the server, client must send `Protocol Version` as `uInt4`.
-    1. If client [is outdated](2.0.md#client), server will send `00` byte and close the connection
-    2. If client [is still valid](2.0.md#client), server will send `01` byte
-2. Now client must send the **Statement**, declaring client-side info, so that server will understand how exactly to
-   speak with it
-3. Server will respond with its own **Statement**
-4. If server has configured handshake, client must send bytes, according to specific handshake algo.
-    1. If handshake failed, server will send `00` bytes and close the connection
-    2. If handshake passed, server will result it `01` byte
+   1. If client [is outdated](2.0.md#client), server will send `server_protocol: uInt4` and close the connection
+   2. If client [is still valid](2.0.md#client), server will send `00 00 00 00`
+2. Now client must send the [**Statement**](2.0.md#statement), declaring client-side info, so that server will
+   understand how exactly to speak with it
+3. Server will respond with its own [**Statement**](2.0.md#statement)
+4. If server has configured [**Handshake**](2.0.md#handshake), client must send bytes, according to specific handshake
+   [algo](2.0.md#handshake-sha256).
+   1. If [**Handshake**](2.0.md#handshake) failed, server will send `00` bytes and close the connection
+   2. If [**Handshake**](2.0.md#handshake) passed, server will result it `01` byte
 5. Initialisation complete
 
 ### Statement
 
-Depending on protocol version, the **Statements** may differ, but within the same version, they are the same thing.
+Depending on protocol version, the [**Statements**](2.0.md#statement) may differ, but within the same version, they are
+the same thing.
 
-**Statement** consists of `uInt4` prefix - length of the statement and byte payload of the statement.
+[**Statement**](2.0.md#statement) consists of `uInt4` prefix - length of the statement and byte payload of the
+statement.
 
 [!ref Protocol v2: Statements](2.0.md#statement)
 
@@ -52,7 +55,7 @@ specifies `schemeFormat: JSON`, then server will return statement in JSON.
 ==- Server: Client is valid
 
 ```
-01
+00 00 00 00
 ```
 
 ===
@@ -102,7 +105,7 @@ Payload: `{"serverTime":1629439550942}`
 37 41 42 6a 35 4d 47 30 36 74 6f 73 49 38 33 36 58 34 59
 ```
 
-==- Server: Hanshake is valid
+==- Server: Handshake is valid
 
 ```
 01

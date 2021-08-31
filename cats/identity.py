@@ -2,8 +2,8 @@ from typing import Type, TypeVar
 
 __all__ = [
     'IdentityMeta',
+    'IdentityObject',
     'Identity',
-    'IdentityChild',
 ]
 
 
@@ -21,6 +21,9 @@ class IdentityMeta(type):
         return IdentityMeta.__identity_registry__[:]
 
 
+IdentityObject = TypeVar('IdentityObject', bound='Identity')
+
+
 class Identity(metaclass=IdentityMeta):
     __slots__ = ()
     id: int
@@ -32,6 +35,3 @@ class Identity(metaclass=IdentityMeta):
         Must return dict of data that can be used by Sentry
         """
         raise NotImplementedError
-
-
-IdentityChild = TypeVar('IdentityChild', bound=Identity)

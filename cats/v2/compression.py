@@ -1,11 +1,11 @@
 import gzip
 import shutil
 from pathlib import Path
-from typing import Union
 
 import zlib
 
 from cats.types import T_Headers
+from cats.utils import as_uint, to_uint
 
 __all__ = [
     'C_NONE',
@@ -96,11 +96,11 @@ class ZlibCompressor(BaseCompressor):
     @classmethod
     async def compress(cls, data: bytes, headers: T_Headers) -> bytes:
         headers['Adler32'] = zlib.adler32(data)
-        return len(data).to_bytes(4, 'big', signed=False) + zlib.compress(data, level=6)
+        return to_uint(len(data), 4) + zlib.compress(data, level=6)
 
     @classmethod
     async def decompress(cls, data: bytes, headers: T_Headers) -> bytes:
-        ln, data = int.from_bytes(data[:4], 'big', signed=False), data[4:]
+        ln, data = as_uint(data[:4]), data[4:]
         buff = zlib.decompress(data)
         checksum = headers.get('Adler32', None)
         if ln != len(buff):
@@ -116,7 +116,7 @@ class ZlibCompressor(BaseCompressor):
         ln = src.stat().st_size
         with src.open('rb') as rc:
             with dst.open('wb') as wc:
-                wc.write(ln.to_bytes(4, 'big', signed=False))
+                wc.write(to_uint(ln, 4))
                 while line := rc.read(1 << 24):
                     value = zlib.adler32(line, value)
                     wc.write(compressor.compress(line))
@@ -130,7 +130,7 @@ class ZlibCompressor(BaseCompressor):
         value = 1
         with src.open('rb') as rc:
             with dst.open('wb') as wc:
-                ln = int.from_bytes(rc.read(4), 'big', signed=False)
+                ln = as_uint(rc.read(4))
                 while line := rc.read(1 << 24):
                     wc.write(buff := compressor.decompress(line))
                     value = zlib.adler32(buff, value)
@@ -149,6 +149,11 @@ C_ZLIB = ZlibCompressor.type_id
 
 
 class Compressor:
+    codes = {
+        DummyCompressor.type_name.lower(): DummyCompressor.type_id,
+        GzipCompressor.type_name.lower(): GzipCompressor.type_id,
+        ZlibCompressor.type_name.lower(): ZlibCompressor.type_id,
+    }
     compressors = {
         C_NONE: DummyCompressor,
         C_GZIP: GzipCompressor,
@@ -156,11 +161,13 @@ class Compressor:
     }
 
     @classmethod
-    async def compress(cls, buff: bytes, headers: T_Headers, compression: int = None) -> (bytes, int):
+    async def compress(cls, buff: bytes, headers: T_Headers, allowed: set[int], default: int,
+                       compression: int = None) -> (bytes, int):
         try:
             if compression is None:
-                compression = await cls.propose_compression(buff)
-
+                compression = await cls.propose_compression(buff, default)
+            if compression not in allowed:
+                raise ValueError(f'Compression unsupported by client: {cls.compressors[compression].type_name}')
             buff = await cls.compressors[compression].compress(buff, headers)
             return buff, compression
 
@@ -175,10 +182,13 @@ class Compressor:
             raise ValueError(f'Failed to decompress data: {str(err)}')
 
     @classmethod
-    async def compress_file(cls, src: Path, dst: Path, headers: T_Headers, compression: int = None) -> int:
+    async def compress_file(cls, src: Path, dst: Path, headers: T_Headers, allowed: set[int], default: int,
+                            compression: int = None) -> int:
         try:
             if compression is None:
-                compression = await cls.propose_compression(src)
+                compression = await cls.propose_compression(src, default)
+            if compression not in allowed:
+                raise ValueError(f'Compression unsupported by client: {cls.compressors[compression].type_name}')
 
             await cls.compressors[compression].compress_file(src, dst, headers)
             return compression
@@ -193,7 +203,7 @@ class Compressor:
             raise ValueError(f'Failed to decompress file: {str(err)}')
 
     @classmethod
-    async def propose_compression(cls, buff: Union[bytes, Path]):
+    async def propose_compression(cls, buff: bytes | Path, default: int):
         if isinstance(buff, bytes):
             ln = len(buff)
         elif isinstance(buff, Path):
@@ -203,4 +213,4 @@ class Compressor:
         if ln <= 4096:
             return C_NONE
         else:
-            return C_ZLIB
+            return default

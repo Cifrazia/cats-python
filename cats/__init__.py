@@ -1,5 +1,7 @@
 from .errors import *
-from .handshake import *
 from .identity import *
+from .plugins import *
+from .types import *
+from .utils import *
 
-version = '0.3.18'
+version = '2.0.0'

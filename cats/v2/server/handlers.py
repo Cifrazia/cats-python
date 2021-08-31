@@ -1,24 +1,25 @@
 import asyncio
 from collections import defaultdict
 from dataclasses import dataclass
+from functools import partial
 from logging import getLogger
 from random import random
 from time import time
-from typing import Any, Awaitable, DefaultDict, Optional, Type, Union
+from typing import Awaitable, Type
 
-from cats.codecs import T_FILE, T_JSON
-from cats.identity import Identity, IdentityChild
+from cats.identity import Identity, IdentityObject
 from cats.plugins import Form, Scheme, SchemeTypes, scheme_json, scheme_load
-from cats.server.action import Action, BaseAction, InputAction
-from cats.types import Headers, Json, List
+from cats.types import Json, List, T_Headers
+from cats.v2.action import Action, BaseAction, InputAction
+from cats.v2.codecs import T_FILE, T_JSON
 
 __all__ = [
     'HandlerItem',
     'Api',
     'Handler',
+    'override_run',
 ]
 
-T_Headers = Union[dict[str, Any], Headers]
 logging = getLogger('CATS')
 
 
@@ -27,15 +28,15 @@ class HandlerItem:
     id: int
     name: str
     handler: Type['Handler']
-    version: Optional[int] = None
-    end_version: Optional[int] = None
+    version: int | None = None
+    end_version: int | None = None
 
 
 class Api:
     __slots__ = ('_handlers',)
 
     def __init__(self):
-        self._handlers: DefaultDict[int, list[HandlerItem]] = defaultdict(list)
+        self._handlers: dict[int, list[HandlerItem]] = defaultdict(list)
 
     def register(self, handler: HandlerItem):
         if handler in self._handlers[handler.id]:
@@ -70,8 +71,8 @@ class Api:
     def update(self, app: 'Api'):
         self._handlers.update(app.handlers)
 
-    def compute(self) -> dict[int, Union[list[HandlerItem], HandlerItem]]:
-        result: dict[int, Union[list[HandlerItem], HandlerItem]] = {}
+    def compute(self) -> dict[int, HandlerItem | list[HandlerItem]]:
+        result = {}
         for handler_id, handler_list in self._handlers.items():
             if not handler_list:
                 continue
@@ -88,22 +89,22 @@ class Handler:
     __slots__ = ('action',)
     handler_id: int
 
-    Loader: Optional[Scheme] = None
-    Dumper: Optional[Scheme] = None
+    Loader: Scheme | None = None
+    Dumper: Scheme | None = None
 
-    data_type: Optional[Union[int, tuple[int]]] = None
-    min_data_len: Optional[int] = None
-    max_data_len: Optional[int] = None
-    block_models: Optional[tuple[str]] = None
-    require_models: Optional[tuple[str]] = None
-    require_auth: Optional[bool] = None
-    min_file_size: Optional[int] = None
-    max_file_size: Optional[int] = None
-    min_file_total_size: Optional[int] = None
-    max_file_total_size: Optional[int] = None
-    min_file_amount: Optional[int] = None
-    max_file_amount: Optional[int] = None
-    fix_exec_time: Optional[Union[int, float]] = None
+    data_type: int | tuple[int] | None = None
+    min_data_len: int | None = None
+    max_data_len: int | None = None
+    block_models: tuple[str] | None = None
+    require_models: tuple[str] | None = None
+    require_auth: bool | None = None
+    min_file_size: int | None = None
+    max_file_size: int | None = None
+    min_file_total_size: int | None = None
+    max_file_total_size: int | None = None
+    min_file_amount: int | None = None
+    max_file_amount: int | None = None
+    fix_exec_time: int | float | None = None
 
     def __init__(self, action: Action):
         self.action = action
@@ -128,7 +129,11 @@ class Handler:
         api.register(HandlerItem(id, name, cls, version, end_version))
         cls.handler_id = id
 
-    async def __call__(self) -> Optional[BaseAction]:
+    @staticmethod
+    def run(handler: 'Handler') -> Awaitable[BaseAction | None]:
+        return handler()
+
+    async def __call__(self) -> BaseAction | None:
         st = time()
         res = await self.prepare()
         if not isinstance(res, BaseAction):
@@ -145,7 +150,7 @@ class Handler:
         """Called before handler() method"""
         try:
             self._check_before_recv()
-        except self.action.conn.STREAM_ERRORS:
+        except self.action.conn.conf.stream_errors:
             raise
         except BaseException:
             await self.action.dump_data(self.action.data_len)
@@ -157,7 +162,7 @@ class Handler:
     async def handle(self):
         raise NotImplementedError
 
-    async def json_load(self, *, many: bool = False, plain: bool = False) -> Union[Json, Form]:
+    async def json_load(self, *, many: bool = False, plain: bool = False) -> Json | Form:
         if self.action.data_type != T_JSON:
             raise TypeError('Unsupported data type. Expected JSON')
 
@@ -181,7 +186,7 @@ class Handler:
         return Action(data=data, headers=headers, status=status)
 
     @property
-    def identity(self) -> Optional[Union[Identity, IdentityChild]]:
+    def identity(self) -> Identity | IdentityObject | None:
         return self.action.conn.identity
 
     def ask(self, data=None, data_type: int = None, compression: int = None, *,
@@ -274,3 +279,10 @@ class Handler:
             raise ValueError(f'Received File amount is less than allowed [{min_len}]')
         if max_len is not None and max_len < x:
             raise ValueError(f'Received File amount is more than allowed [{max_len}]')
+
+
+def override_run(middleware: list):
+    if middleware:
+        Handler.run = middleware.pop(0)
+    for fn in middleware:
+        Handler.run = partial(fn, Handler.run)

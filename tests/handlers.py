@@ -1,10 +1,10 @@
+import asyncio
 import os
-from asyncio import sleep
 
 from pydantic import BaseModel, Field
 
-from cats.codecs import T_BYTE
-from cats.server import Action, Api, Handler, StreamAction
+from cats.v2 import Action, StreamAction, T_BYTE
+from cats.v2.server import Api, Handler
 
 __all__ = [
     'api',
@@ -50,9 +50,9 @@ class VersionedHandler3(Handler, api=api, id=0x0002, version=6):
 class DelayedHandler(Handler, api=api, id=0xFFFF, name='delayed response'):
     async def gen(self):
         yield b'hello'
-        await sleep(0.01)
+        await asyncio.sleep(0.01)
         yield b' world'
-        await sleep(0.01)
+        await asyncio.sleep(0.01)
         yield b'!'
 
     async def handle(self):

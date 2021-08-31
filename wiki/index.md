@@ -10,13 +10,13 @@ for internal use in [Cifrazia](https://cifrazia.com).
 ## Features
 
 + One action at a time
-+ Up-to 4GB payload in single plain Action
-+ Streaming Actions
-+ Chained inputs
-+ Broadcasts
-+ Multiple data formats
-+ Custom handshakes
-+ Local and global encryption
++ Up-to 4GB payload in single [plain Action](protocol/2.0.md#0x00-action)
++ Unlimited and delayed payload in [Streaming Actions](protocol/2.0.md#0x01-streamaction)
++ Chained [inputs](protocol/2.0.md#inputs)
++ [Broadcasts](protocol/2.0.md#broadcast)
++ Multiple [data formats](protocol/2.0.md#data-types)
++ Custom [handshakes](protocol/2.0.md#handshake)
++ ~~Local and global encryption~~
 
 [!ref](get-started.md)
 
