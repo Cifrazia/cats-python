@@ -7,21 +7,21 @@
     <meta name="turbo-cache-control" content="no-cache">
 
     <!-- Primary Meta Tags -->
-    <title>Protocol | CATS python</title>
-    <meta name="title" content="Protocol | CATS python">
-    <meta name="description" content="All strings, texts, etc. is encoded in UTF-8" />
+    <title>How does it work | CATS python</title>
+    <meta name="title" content="How does it work | CATS python">
+    <meta name="description" content="Listen to host:port" />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://adambrianbright.github.io/cats-python/protocol/">
-    <meta property="og:title" content="Protocol | CATS python">
-    <meta property="og:description" content="All strings, texts, etc. is encoded in UTF-8">
+    <meta property="og:url" content="https://adambrianbright.github.io/cats-python/how-does-it-work/">
+    <meta property="og:title" content="How does it work | CATS python">
+    <meta property="og:description" content="Listen to host:port">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://adambrianbright.github.io/cats-python/protocol/">
-    <meta property="twitter:title" content="Protocol | CATS python">
-    <meta property="twitter:description" content="All strings, texts, etc. is encoded in UTF-8">
+    <meta property="twitter:url" content="https://adambrianbright.github.io/cats-python/how-does-it-work/">
+    <meta property="twitter:title" content="How does it work | CATS python">
+    <meta property="twitter:description" content="Listen to host:port">
     
     <script>(function () { var el = document.documentElement, m = localStorage.getItem("/cats-python/doc_theme"), wm = window.matchMedia; if (m === "dark" || (!m && wm && wm("(prefers-color-scheme: dark)").matches)) { el.classList.add("dark") } else { el.classList.remove("dark") } })();</script>
 
@@ -30,6 +30,7 @@
 
     <script type="text/javascript" src="/cats-python/resources/js/config.js?v=1.9.683713930575" defer data-turbo-track="reload"></script>
     <script type="text/javascript" src="/cats-python/resources/js/retype.js?v=1.9" defer data-turbo-track="reload"></script>
+    <script id="mermaid-js" type="text/javascript" src="/cats-python/resources/js/mermaid.js?v=1.9" defer></script>
 </head>
     <body>
         <div id="docs-app" class="relative text-base antialiased text-gray-700 bg-white font-body dark:bg-dark-850 dark:text-dark-300">
@@ -197,230 +198,224 @@
                 <div id="docs-sidebar-right-toggle"></div>
                
                 <!-- Page content  -->
-<doc-anchor-target id="protocol" class="break-words">
+<doc-anchor-target id="how-does-it-work" class="break-words">
     <h1>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#protocol">#</doc-anchor-trigger>
-        <span>Protocol</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#how-does-it-work">#</doc-anchor-trigger>
+        <span>How does it work</span>
     </h1>
 </doc-anchor-target>
-<doc-anchor-target id="common-rules">
+<doc-anchor-target id="server">
     <h2>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#common-rules">#</doc-anchor-trigger>
-        <span>Common rules</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#server">#</doc-anchor-trigger>
+        <span>Server</span>
     </h2>
 </doc-anchor-target>
-<ul>
-<li>All strings, texts, etc. is encoded in <code v-pre>UTF-8</code></li>
-<li>All numbers are <code v-pre>unsigned</code>, if not stated otherwise</li>
-</ul>
-<doc-anchor-target id="initialisation">
-    <h2>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#initialisation">#</doc-anchor-trigger>
-        <span>Initialisation</span>
-    </h2>
-</doc-anchor-target>
-<ol>
-<li>After connecting via <code v-pre>TCP</code> to the server, client must send <code v-pre>Protocol Version</code> as <code v-pre>uInt4</code>.
-<ol>
-<li>If client <a href="2.0/#client">is outdated</a>, server will send <code v-pre>server_protocol: uInt4</code> and close the connection</li>
-<li>If client <a href="2.0/#client">is still valid</a>, server will send <code v-pre>00 00 00 00</code></li>
-</ol>
-</li>
-<li>Now client must send the <a href="2.0/#statement"><strong>Statement</strong></a>, declaring client-side info, so that server will
-understand how exactly to speak with it</li>
-<li>Server will respond with its own <a href="2.0/#statement"><strong>Statement</strong></a></li>
-<li>If server has configured <a href="2.0/#handshake"><strong>Handshake</strong></a>, client must send bytes, according to specific handshake
-<a href="2.0/#handshake-sha256">algo</a>.
-<ol>
-<li>If <a href="2.0/#handshake"><strong>Handshake</strong></a> failed, server will send <code v-pre>00</code> bytes and close the connection</li>
-<li>If <a href="2.0/#handshake"><strong>Handshake</strong></a> passed, server will result it <code v-pre>01</code> byte</li>
-</ol>
-</li>
-<li>Initialisation complete</li>
-</ol>
-<doc-anchor-target id="statement">
+<doc-anchor-target id="server-start">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#statement">#</doc-anchor-trigger>
-        <span>Statement</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#server-start">#</doc-anchor-trigger>
+        <span>Server: Start</span>
     </h3>
 </doc-anchor-target>
-<p>Depending on protocol version, the <a href="2.0/#statement"><strong>Statements</strong></a> may differ, but within the same version, they are
-the same thing.</p>
-<p><a href="2.0/#statement"><strong>Statement</strong></a> consists of <code v-pre>uInt4</code> prefix - length of the statement and byte payload of the
-statement.</p>
-<p>
-<div class="mb-6 px-5 py-4 flex justify-between relative border border-gray-300 hover:border-gray-400 dark:border-dark-650 dark:hover:border-dark-450 rounded transition-colors duration-150">
-    <div class="flex items-center text-blue-500 dark:text-blue-400">
-        <span class="inline-block mb-px">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" role="presentation" fill="currentColor"><path fill="none" d="M0 0h24v24H0z"/><path d="M19.92 12.38a1 1 0 00-.22-1.09l-7-7a.996.996 0 10-1.41 1.41l5.3 5.3H5c-.55 0-1 .45-1 1s.45 1 1 1h11.59l-5.29 5.29a.996.996 0 000 1.41c.19.2.44.3.7.3s.51-.1.71-.29l7-7c.09-.09.16-.21.21-.33z"/></svg>
-        </span>
-        <span class="inline-block font-medium ml-2">Protocol v2: Statements</span>
-    </div>
-    <div class="flex items-center text-xs text-gray-400 dark:text-dark-400">
-        <span>/cats-python/protocol/2.0/#statement</span>
-    </div>
-    <a href="/cats-python/protocol/2.0/#statement" class="absolute block inset-0"></a>
-</div>
-</p>
-<div class="flex mb-6">
-    <div class="flex-shrink-0 w-1 rounded-tl rounded-bl bg-blue-500 dark:bg-blue-400"></div>
-    <div class="flex w-full py-4 border border-l-0 border-gray-300 rounded-tr rounded-br doc-alert bg-white dark:bg-dark-700 dark:border-dark-700" role="alert">
-        <div class="flex items-center ml-4 h-7">
-            <svg xmlns="http://www.w3.org/2000/svg" class="mb-px text-blue-500 dark:text-blue-400" width="22" height="22" viewBox="0 0 24 24" role="presentation">
-                <g fill="currentColor"><g>
-                    <path d="M12 1C5.93 1 1 5.93 1 12s4.93 11 11 11 11-4.93 11-11S18.07 1 12 1zm0 20c-4.96 0-9-4.04-9-9s4.04-9 9-9 9 4.04 9 9-4.04 9-9 9z"></path>
-                    <path d="M12 11c-.55 0-1 .45-1 1v4c0 .55.45 1 1 1s1-.45 1-1v-4c0-.55-.45-1-1-1zM12.01 7c-.56 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z"></path>
-                    <path fill="none" d="M0 0h24v24H0z"></path>
-                </g></g>
-            </svg>
-        </div>
-        <div class="pr-5 ml-3">
-<p>Statement is the only place, where scheme format (JSON | YAML | TOML) is being <code v-pre>auto</code> detected, and not defined.</p>
-        </div>
-    </div>
-</div>
-<div class="flex mb-6">
-    <div class="flex-shrink-0 w-1 rounded-tl rounded-bl bg-blue-500 dark:bg-blue-400"></div>
-    <div class="flex w-full py-4 border border-l-0 border-gray-300 rounded-tr rounded-br doc-alert bg-white dark:bg-dark-700 dark:border-dark-700" role="alert">
-        <div class="flex items-center ml-4 h-7">
-            <svg xmlns="http://www.w3.org/2000/svg" class="mb-px text-blue-500 dark:text-blue-400" width="22" height="22" viewBox="0 0 24 24" role="presentation">
-                <g fill="currentColor"><g>
-                    <path d="M12 1C5.93 1 1 5.93 1 12s4.93 11 11 11 11-4.93 11-11S18.07 1 12 1zm0 20c-4.96 0-9-4.04-9-9s4.04-9 9-9 9 4.04 9 9-4.04 9-9 9z"></path>
-                    <path d="M12 11c-.55 0-1 .45-1 1v4c0 .55.45 1 1 1s1-.45 1-1v-4c0-.55-.45-1-1-1zM12.01 7c-.56 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z"></path>
-                    <path fill="none" d="M0 0h24v24H0z"></path>
-                </g></g>
-            </svg>
-        </div>
-        <div class="pr-5 ml-3">
-<p>Server statement will be encoded with requested format. If client send YAML statement, but
-specifies <code v-pre>schemeFormat: JSON</code>, then server will return statement in JSON.</p>
-        </div>
-    </div>
-</div>
-<doc-anchor-target id="byte-example">
+<ol>
+<li>Listen to <code v-pre>host:port</code></li>
+<li>Accept connection</li>
+<li><doc-anchor-trigger to="#server-handle-connection">Handle connection</doc-anchor-trigger> in async thread</li>
+<li><code v-pre>GOTO 2</code></li>
+</ol>
+<doc-anchor-target id="server-handle-connection">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#byte-example">#</doc-anchor-trigger>
-        <span>Byte example</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#server-handle-connection">#</doc-anchor-trigger>
+        <span>Server: Handle connection</span>
     </h3>
 </doc-anchor-target>
-<doc-anchor-target id="protocol-version-validation">
-    <h4>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#protocol-version-validation">#</doc-anchor-trigger>
-        <span>Protocol version validation</span>
-    </h4>
+<ol>
+<li>Receive <code v-pre>protocol_version: uInt1</code></li>
+<li>If protocol is invalid
+<ol>
+<li>Send <code v-pre>00</code></li>
+<li>Close connection</li>
+<li><code v-pre>STOP</code></li>
+</ol>
+</li>
+<li>Send <code v-pre>01</code></li>
+<li>Receive <code v-pre>INIT</code></li>
+<li>Validate and store client time, api version, etc.</li>
+<li>Send <code v-pre>INIT</code></li>
+<li>If <code v-pre>handshake is not None</code>, do:
+<ol>
+<li>Receive handshake</li>
+<li>If handshake broken
+<ol>
+<li>Send <code v-pre>00</code></li>
+<li>close connection</li>
+<li><code v-pre>STOP</code></li>
+</ol>
+</li>
+<li>Send <code v-pre>01</code></li>
+</ol>
+</li>
+<li><doc-anchor-trigger to="#server-listen-for-requests">Listen for requests</doc-anchor-trigger> in async thread</li>
+</ol>
+<doc-anchor-target id="server-listen-for-requests">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#server-listen-for-requests">#</doc-anchor-trigger>
+        <span>Server: Listen for requests</span>
+    </h3>
 </doc-anchor-target>
-<doc-panels>
-   <doc-panel id="client-protocol-version-2-0" collapsed>
-       <template #title>Client: Protocol version <code v-pre>2.0</code></template>
-<div class="codeblock-wrapper"><doc-codeblock line-numbers>
-<pre class="language-none"><code v-pre class="language-none">00 00 00 02</code></pre>
-</doc-codeblock></div>
-   </doc-panel>
-   <doc-panel id="server-client-is-valid" collapsed>
-       <template #title>Server: Client is valid</template>
-<div class="codeblock-wrapper"><doc-codeblock line-numbers>
-<pre class="language-none"><code v-pre class="language-none">00 00 00 00</code></pre>
-</doc-codeblock></div>
-   </doc-panel>
-</doc-panels>
-<doc-anchor-target id="statement-exchange">
-    <h4>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#statement-exchange">#</doc-anchor-trigger>
-        <span>Statement exchange</span>
-    </h4>
-</doc-anchor-target>
-<doc-panels>
-   <doc-panel id="client-client-statement" collapsed>
-       <template #title>Client: client statement</template>
-<p>Payload length: <code v-pre>81</code></p>
-<div class="codeblock-wrapper"><doc-codeblock line-numbers>
-<pre class="language-none"><code v-pre class="language-none">00 00 00 51</code></pre>
-</doc-codeblock></div>
-<p>Payload: <code v-pre>{&quot;api&quot;:1,&quot;clientTime&quot;:1629439550942,&quot;schemeFormat&quot;:&quot;JSON&quot;,&quot;compressors&quot;:[&quot;zlib&quot;]}</code></p>
-<div class="codeblock-wrapper"><doc-codeblock line-numbers>
-<pre class="language-none"><code v-pre class="language-none">7B 22 61 70 69 22 3A 31 2C 22 63 6C 69 65 6E 74 54 69 6D 65 22 3A 31 36 
-32 39 34 33 39 35 35 30 39 34 32 2C 22 73 63 68 65 6D 65 46 6F 72 6D 61 
-74 22 3A 22 4A 53 4F 4E 22 2C 22 63 6F 6D 70 72 65 73 73 6F 72 73 22 3A 
-5B 22 7A 6C 69 62 22 5D 7D</code></pre>
-</doc-codeblock></div>
-   </doc-panel>
-   <doc-panel id="server-server-statement" collapsed>
-       <template #title>Server: server statement</template>
-<p>Payload length: <code v-pre>28</code></p>
-<div class="codeblock-wrapper"><doc-codeblock line-numbers>
-<pre class="language-none"><code v-pre class="language-none">00 00 00 1C</code></pre>
-</doc-codeblock></div>
-<p>Payload: <code v-pre>{&quot;serverTime&quot;:1629439550942}</code></p>
-<div class="codeblock-wrapper"><doc-codeblock line-numbers>
-<pre class="language-none"><code v-pre class="language-none">7B 22 73 65 72 76 65 72 54 69 6D 65 22 3A 31 36 32 39 34 33 39 35 35 30 
-39 34 32 7D</code></pre>
-</doc-codeblock></div>
-   </doc-panel>
-</doc-panels>
-<doc-anchor-target id="handshake-sha256">
-    <h4>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#handshake-sha256">#</doc-anchor-trigger>
-        <span>Handshake (SHA256)</span>
-    </h4>
-</doc-anchor-target>
-<doc-panels>
-   <doc-panel id="client-handshake-hash" collapsed>
-       <template #title>Client: Handshake hash</template>
-<div class="codeblock-wrapper"><doc-codeblock line-numbers>
-<pre class="language-none"><code v-pre class="language-none">4a 4f 47 45 56 61 5f 70 6e 64 4a 34 47 69 5a 41 47 53 63 72 64 37 6e 33 
-37 41 42 6a 35 4d 47 30 36 74 6f 73 49 38 33 36 58 34 59</code></pre>
-</doc-codeblock></div>
-   </doc-panel>
-   <doc-panel id="server-handshake-is-valid" collapsed>
-       <template #title>Server: Handshake is valid</template>
-<div class="codeblock-wrapper"><doc-codeblock line-numbers>
-<pre class="language-none"><code v-pre class="language-none">01</code></pre>
-</doc-codeblock></div>
-   </doc-panel>
-</doc-panels>
-<doc-anchor-target id="done">
-    <h4>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#done">#</doc-anchor-trigger>
-        <span>Done</span>
-    </h4>
-</doc-anchor-target>
-<p>Now connection is fully established, you may start exchanging actions</p>
-<doc-anchor-target id="actions">
+<doc-panel id="connection-life-flow" collapsed>
+    <template #title>Connection life flow</template>
+<div class="overflow-hidden mb-6 py-4 dark:px-5 dark:bg-white rounded-md"><pre class="mermaid w-full">flowchart TD
+   subgraph g_conn [&quot;Server connection&quot;]
+      TASK(&quot;Asyncio task&quot;)
+      ACTION(&quot;New Action&quot;)
+      FORK(&quot;Is action a request&quot;)
+      HANDLE(&quot;Handle action&quot;)
+      HANDLE_FORK(&quot;Has issued conn.ask()?&quot;)
+      ASK(&quot;Ask for input&quot;)
+      FUTURE(&quot;Future pool&quot;)
+      HANDLE_RES_FORK(&quot;Is result an Action&quot;)
+      SET_DONE(&quot;Set future done&quot;)
+      SEND_TO_CLIENT(&quot;Send message to client&quot;)
+   end
+   subgraph g_client [&quot;Client&quot;]
+      USR(&quot;User request&quot;)
+      RESPONSE(&quot;Action received&quot;)
+      QUESTION(&quot;Input received&quot;)
+      REPLY(&quot;Reply to input&quot;)
+      SEND_TO_SERVER(&quot;Send message to server&quot;)
+   end
+   subgraph g_mq [&quot;RPC/MQ&quot;]
+      EVENT(&quot;New RPC/MQ event&quot;)
+   end
+   TASK--&gt;ACTION--&gt;FORK
+   FORK--&gt;|Yes|HANDLE--&gt;HANDLE_FORK
+   HANDLE_FORK--&gt;|Yes|ASK
+   ASK--&gt;|Send action|QUESTION
+   ASK--&gt;|Wait for future|FUTURE--&gt;|future is done|HANDLE_FORK
+   HANDLE_FORK--&gt;|No|HANDLE_RES_FORK
+   HANDLE_RES_FORK--&gt;|Yes|SEND_TO_CLIENT--&gt;RESPONSE
+   FORK--&gt;|No|SET_DONE--&gt;FUTURE
+   USR--&gt;ACTION
+   QUESTION--&gt;REPLY--&gt;ACTION
+   SEND_TO_SERVER--&gt;ACTION
+   EVENT--&gt;ACTION</pre></div>
+</doc-panel>
+<ol>
+<li>Try:
+<ol>
+<li>Receive <code v-pre>action_id: uInt1</code></li>
+<li>Find matching <code v-pre>Action</code> type</li>
+<li>Create <code v-pre>Action[action_id]</code> instance</li>
+<li>Receive <code v-pre>Action</code> HEAD</li>
+<li>If HEAD invalid
+2. Read payload <code v-pre>&gt; /dev/null</code>
+<ol>
+<li>Raise <code v-pre>ProtocolError</code></li>
+</ol>
+</li>
+<li>If not delayable
+<ol>
+<li>Receive payload</li>
+<li>Decompress, decode, etc. payload</li>
+</ol>
+</li>
+<li>Find <code v-pre>Handler</code> by <code v-pre>Action[action](HEAD).handler_id</code></li>
+<li>Create <code v-pre>Handle(Action)</code> instance</li>
+<li>Wrap <code v-pre>handler</code> with <code v-pre>Middleware</code></li>
+<li>Call <code v-pre>middleware[middleware[handler]]</code></li>
+<li>Call <code v-pre>handler.prepare</code>
+<ol>
+<li>If HEAD is invalid
+<ol>
+<li>If payload delayed, read payload <code v-pre>&gt; /dev/null</code></li>
+<li>Raise <code v-pre>ValueError</code></li>
+</ol>
+</li>
+</ol>
+</li>
+<li>if payload recv delayed
+<ol>
+<li>Receive payload</li>
+<li>Decompress, decode, etc. payload</li>
+</ol>
+</li>
+<li>Call <code v-pre>handler.handle()</code></li>
+<li>If result is <code v-pre>Action</code>
+<ol>
+<li>Call <code v-pre>Action.send(handler.action.conn)</code></li>
+</ol>
+</li>
+</ol>
+</li>
+<li><code v-pre>GOTO 1</code></li>
+</ol>
+<doc-anchor-target id="client">
     <h2>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#actions">#</doc-anchor-trigger>
-        <span>Actions</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#client">#</doc-anchor-trigger>
+        <span>Client</span>
     </h2>
 </doc-anchor-target>
-<p>Actions - are like messages. Each action type has its own structure and purpose, but they all consist of <strong>TWO</strong> main
-parts:</p>
-<p><button class="no-link inline-flex items-center font-medium cursor-pointer transition-colors duration-200 ease-out focus:outline-none bg-gray-900 hover:bg-gray-700 dark:bg-white dark:hover:bg-dark-300 text-white dark:text-black px-4 h-10 text-sm rounded-none" style="margin: 0px 4px 4px 0px;">
-    <span><svg xmlns="http://www.w3.org/2000/svg" class="mb-px inline-flex mr-2" width="18" height="18" viewBox="0 0 24 24" role="presentation"><g fill="currentColor"><path fill-rule="evenodd" d="M8.114 2.094a.75.75 0 01.386.656V9h1.252a.75.75 0 110 1.5H5.75a.75.75 0 010-1.5H7V4.103l-.853.533a.75.75 0 01-.795-1.272l2-1.25a.75.75 0 01.762-.02zm4.889 5.66a.75.75 0 01.75-.75h5.232a.75.75 0 01.53 1.28l-2.776 2.777c.55.097 1.057.253 1.492.483.905.477 1.504 1.284 1.504 2.418 0 .966-.471 1.75-1.172 2.27-.687.511-1.587.77-2.521.77-1.367 0-2.274-.528-2.667-.756a.75.75 0 01.755-1.297c.331.193.953.553 1.912.553.673 0 1.243-.188 1.627-.473.37-.275.566-.635.566-1.067 0-.5-.219-.836-.703-1.091-.538-.284-1.375-.443-2.471-.443a.75.75 0 01-.53-1.28l2.643-2.644h-3.421a.75.75 0 01-.75-.75zM7.88 15.215a1.4 1.4 0 00-1.446.83.75.75 0 01-1.37-.61 2.9 2.9 0 012.986-1.71 2.565 2.565 0 011.557.743c.434.446.685 1.058.685 1.778 0 1.641-1.254 2.437-2.12 2.986-.538.341-1.18.694-1.495 1.273H9.75a.75.75 0 010 1.5h-4a.75.75 0 01-.75-.75c0-1.799 1.337-2.63 2.243-3.21 1.032-.659 1.55-1.031 1.55-1.8 0-.355-.116-.584-.26-.732a1.068 1.068 0 00-.652-.298z"/></g></svg></span>
-    <span>Action ID: uInt1</span>
-</button>
-<button class="no-link inline-flex items-center font-medium cursor-pointer transition-colors duration-200 ease-out focus:outline-none bg-gray-900 hover:bg-gray-700 dark:bg-white dark:hover:bg-dark-300 text-white dark:text-black px-4 h-10 text-sm rounded-none" style="margin: 0px 4px 4px 0px;">
-    <span><svg xmlns="http://www.w3.org/2000/svg" class="mb-px inline-flex mr-2" width="18" height="18" viewBox="0 0 24 24" role="presentation"><g fill="currentColor"><path fill-rule="evenodd" d="M12.876.64a1.75 1.75 0 00-1.75 0l-8.25 4.762a1.75 1.75 0 00-.875 1.515v9.525c0 .625.334 1.203.875 1.515l8.25 4.763a1.75 1.75 0 001.75 0l8.25-4.762a1.75 1.75 0 00.875-1.516V6.917a1.75 1.75 0 00-.875-1.515L12.876.639zm-1 1.298a.25.25 0 01.25 0l7.625 4.402-7.75 4.474-7.75-4.474 7.625-4.402zM3.501 7.64v8.803c0 .09.048.172.125.216l7.625 4.402v-8.947L3.501 7.64zm9.25 13.421l7.625-4.402a.25.25 0 00.125-.216V7.639l-7.75 4.474v8.947z"/></g></svg></span>
-    <span>Action Body: bytes</span>
-</button></p>
-<p><strong>Action Body</strong> always contains <strong>byte schema</strong>, but can also contain <strong>HEADERS</strong> and/or <strong>PAYLOAD</strong></p>
-<p>
-<div class="mb-6 px-5 py-4 flex justify-between relative border border-gray-300 hover:border-gray-400 dark:border-dark-650 dark:hover:border-dark-450 rounded transition-colors duration-150">
-    <div class="flex items-center text-blue-500 dark:text-blue-400">
-        <span class="inline-block mb-px">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" role="presentation" fill="currentColor"><path fill="none" d="M0 0h24v24H0z"/><path d="M19.92 12.38a1 1 0 00-.22-1.09l-7-7a.996.996 0 10-1.41 1.41l5.3 5.3H5c-.55 0-1 .45-1 1s.45 1 1 1h11.59l-5.29 5.29a.996.996 0 000 1.41c.19.2.44.3.7.3s.51-.1.71-.29l7-7c.09-.09.16-.21.21-.33z"/></svg>
-        </span>
-        <span class="inline-block font-medium ml-2">Protocol v2: Actions</span>
-    </div>
-    <div class="flex items-center text-xs text-gray-400 dark:text-dark-400">
-        <span>/cats-python/protocol/2.0/#actions</span>
-    </div>
-    <a href="/cats-python/protocol/2.0/#actions" class="absolute block inset-0"></a>
-</div>
-</p>
-<ul>
-<li>First, you send <code v-pre>uInt1</code> <strong>Action ID</strong></li>
-<li>Then, you send bytes, according to chosen action type scheme</li>
-</ul>
-<p>If you listen for actions, read <code v-pre>1 byte</code>, match this byte with action type, then read stream with according function.</p>
+<ol>
+<li>Connect to Server</li>
+<li>Send <code v-pre>protocol_version: uInt1</code></li>
+<li>Recv <code v-pre>status: uInt1</code></li>
+<li>If not status:
+<ol>
+<li>?Reconnect?</li>
+<li><code v-pre>STOP</code></li>
+</ol>
+</li>
+<li>Send <code v-pre>INIT</code></li>
+<li>Recv <code v-pre>INIT</code></li>
+<li>If <code v-pre>handshake is not None</code></li>
+<li>SEND <code v-pre>Handshake</code></li>
+<li>RECV <code v-pre>status: uInt1</code></li>
+<li>If not status</li>
+<li><code v-pre>STOP</code></li>
+<li><doc-anchor-trigger to="#client-listen-for-actions">Listen for actions</doc-anchor-trigger> in async thread</li>
+</ol>
+<doc-anchor-target id="client-listen-for-actions">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#client-listen-for-actions">#</doc-anchor-trigger>
+        <span>Client: Listen for actions</span>
+    </h3>
+</doc-anchor-target>
+<ol>
+<li>Try:
+<ol>
+<li>Recv <code v-pre>action_id: uInt1</code></li>
+<li>Find matching <code v-pre>Action</code> type</li>
+<li>Create <code v-pre>Action[action_id]</code> instance</li>
+<li>Receive <code v-pre>Action</code> HEAD</li>
+<li>If HEAD invalid
+<ol>
+<li>Read payload <code v-pre>&gt; /dev/null</code></li>
+<li>Raise <code v-pre>ProtocolError</code></li>
+</ol>
+</li>
+<li>If not delayable
+<ol>
+<li>Receive payload</li>
+<li>Decompress, decode, etc. payload</li>
+</ol>
+</li>
+<li>If <code v-pre>message_id</code> is in <code v-pre>recv</code> pool:
+<ol>
+<li>Pass <code v-pre>action</code> to <code v-pre>conn.recv()</code> Future</li>
+<li><code v-pre>GOTO 1</code></li>
+</ol>
+</li>
+<li>If <code v-pre>message_id</code> is in <code v-pre>0x8000</code> to <code v-pre>0xFFFF</code> range:
+<ol>
+<li>Find <code v-pre>Listener[action.head.handler_id]</code></li>
+<li>Pass <code v-pre>action</code> to <code v-pre>Listener</code></li>
+<li><code v-pre>GOTO 1</code></li>
+</ol>
+</li>
+</ol>
+</li>
+<li><code v-pre>GOTO 1</code></li>
+</ol>
 
 
 
@@ -430,7 +425,7 @@ parts:</p>
             </div>
 
             <div class="flex flex-wrap items-center justify-between mt-14">
-    <a class="my-2.5 inline-flex items-center text-sm whitespace-nowrap text-blue-500 dark:text-blue-400 hover:text-blue-700 hover:underline" href="https://github.com/AdamBrianBright/cats-python/blob/master/wiki/protocol/index.md" target="_blank" rel="noopener">
+    <a class="my-2.5 inline-flex items-center text-sm whitespace-nowrap text-blue-500 dark:text-blue-400 hover:text-blue-700 hover:underline" href="https://github.com/AdamBrianBright/cats-python/blob/master/wiki/how-does-it-work.md" target="_blank" rel="noopener">
         <svg class="mr-1.5" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" overflow="visible"><path d="M20 12c-.55 0-1 .45-1 1v7c0 .55-.45 1-1 1H4c-.55 0-1-.45-1-1V6c0-.55.45-1 1-1h7c.55 0 1-.45 1-1s-.45-1-1-1H4C2.35 3 1 4.35 1 6v14c0 1.65 1.35 3 3 3h14c1.65 0 3-1.35 3-3v-7c0-.55-.45-1-1-1z" /><path d="M22.21 1.79c-1.18-1.18-3.24-1.18-4.41 0l-9.5 9.5c-.13.13-.22.29-.26.46l-1 4c-.08.34.01.7.26.95.18.2.44.3.7.3.08 0 .16-.01.24-.03l4-1c.18-.04.34-.13.46-.26l9.5-9.5c1.22-1.22 1.22-3.2.01-4.42zm-1.42 3l-9.3 9.3-2.11.53.53-2.11 9.3-9.3c.42-.42 1.16-.42 1.59 0 .43.43.43 1.15-.01 1.58z" /><path fill="none" d="M0 0h24v24H0z" /></svg>
         <span>Edit on GitHub</span>
     </a>
@@ -440,20 +435,20 @@ parts:</p>
 
 <nav class="flex mt-14">
     <div class="w-1/2">
-        <a class="px-5 py-4 h-full flex items-center break-all md:break-normal font-medium text-blue-500 dark:text-blue-400 border border-gray-300 hover:border-gray-400 dark:border-dark-650 dark:hover:border-dark-450 rounded-l-lg transition-colors duration-150 relative hover:z-5" href="/cats-python/get-started/">
+        <a class="px-5 py-4 h-full flex items-center break-all md:break-normal font-medium text-blue-500 dark:text-blue-400 border border-gray-300 hover:border-gray-400 dark:border-dark-650 dark:hover:border-dark-450 rounded-l-lg transition-colors duration-150 relative hover:z-5" href="/cats-python/protocol/2.0/">
             <svg xmlns="http://www.w3.org/2000/svg" class="mr-3" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" overflow="visible"><path d="M19 11H7.41l5.29-5.29a.996.996 0 10-1.41-1.41l-7 7a1 1 0 000 1.42l7 7a1.024 1.024 0 001.42-.01.996.996 0 000-1.41L7.41 13H19c.55 0 1-.45 1-1s-.45-1-1-1z" /><path fill="none" d="M0 0h24v24H0z" /></svg>
             <span>
                 <span class="block text-xs font-normal text-gray-400 dark:text-dark-400">Previous</span>
-                <span class="block mt-1">Getting Started</span>
+                <span class="block mt-1">Protocol v2.0</span>
             </span>
         </a>
     </div>
 
     <div class="w-1/2">
-        <a class="px-5 py-4 -mx-px h-full flex items-center justify-end break-all md:break-normal font-medium text-blue-500 dark:text-blue-400 border border-gray-300 hover:border-gray-400 dark:border-dark-650 dark:hover:border-dark-450 rounded-r-lg transition-colors duration-150 relative hover:z-5" href="/cats-python/protocol/2.0/">
+        <a class="px-5 py-4 -mx-px h-full flex items-center justify-end break-all md:break-normal font-medium text-blue-500 dark:text-blue-400 border border-gray-300 hover:border-gray-400 dark:border-dark-650 dark:hover:border-dark-450 rounded-r-lg transition-colors duration-150 relative hover:z-5" href="/cats-python/changelog/">
             <span>
                 <span class="block text-xs font-normal text-right text-gray-400 dark:text-dark-400">Next</span>
-                <span class="block mt-1">Protocol v2.0</span>
+                <span class="block mt-1">Changelog</span>
             </span>
             <svg xmlns="http://www.w3.org/2000/svg" class="ml-3" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" overflow="visible"><path d="M19.92 12.38a1 1 0 00-.22-1.09l-7-7a.996.996 0 10-1.41 1.41l5.3 5.3H5c-.55 0-1 .45-1 1s.45 1 1 1h11.59l-5.29 5.29a.996.996 0 000 1.41c.19.2.44.3.7.3s.51-.1.71-.29l7-7c.09-.09.16-.21.21-.33z" /><path fill="none" d="M0 0h24v24H0z" /></svg>
         </a>
@@ -504,6 +499,6 @@ parts:</p>
 
         <div id="docs-overlay-target"></div>
 
-        <script>window.__DOCS__ = { "title": "Protocol", icon: "file", hasPrism: false, hasMermaid: false }</script>
+        <script>window.__DOCS__ = { "title": "How does it work", icon: "file", hasPrism: false, hasMermaid: true }</script>
     </body>
 </html>
