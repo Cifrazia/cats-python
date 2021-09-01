@@ -35,6 +35,15 @@ class Server(TCPServer):
         self.connections: list[Connection] = []
         super().__init__(ssl_options=ssl_options, max_buffer_size=max_buffer_size, read_chunk_size=read_chunk_size)
 
+    @classmethod
+    async def broadcast(cls, channel: str, handler_id: int, data=None, message_id: int = None, compression: int = None,
+                        *, headers=None, status: int = None):
+        return await asyncio.gather(*(
+            conn.send(handler_id, data, message_id, compression, headers=headers, status=status)
+            for server in cls.running_servers()
+            for conn in server.app.channel(channel)
+        ))
+
     async def handle_stream(self, stream: IOStream, address: tuple[str, int]) -> None:
         protocol_version = as_uint(await stream.read_bytes(4))
         if not self.protocols[0] <= protocol_version <= self.protocols[1]:

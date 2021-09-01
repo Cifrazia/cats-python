@@ -13,7 +13,21 @@ Released: 2021-09-20
 
 - [ ] Added different scheme language support: YAML, TOML
 
-## `4.0.0` [!badge variant="info" text="LATEST"]
+## `4.0.1` [!badge variant="info" text="LATEST"]
+
+Released: 2021-09-01
+
+### Added
+
+- [x] Added `async Server.broadcast(channel, *args, **kwargs)` method to send message to each connection in specified
+  channel in all running servers
+
+### Fixed
+
+- [x] Fixed `Connection.send` and `Connection.send_stream` were not present in base class
+- [x] Removed redundant `Python 3.9` classifier
+
+## `4.0.0`
 
 Released: 2021-08-31
 

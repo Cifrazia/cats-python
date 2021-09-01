@@ -6,6 +6,7 @@ from typing import TypeVar
 import sentry_sdk
 from tornado.iostream import IOStream
 
+from cats import BytesAnyGen
 from cats.errors import ProtocolError
 from cats.identity import Identity
 from cats.v2 import C_NONE, Compressor
@@ -147,6 +148,15 @@ class Connection:
         :param action:
         :return:
         """
+        raise NotImplementedError
+
+    async def send(self, handler_id: int, data=None, message_id=None, compression=None, *,
+                   headers=None, status=None):
+        raise NotImplementedError
+
+    async def send_stream(self, handler_id: int, data: BytesAnyGen, data_type: int,
+                          message_id=None, compression=None, *,
+                          headers=None, status=None):
         raise NotImplementedError
 
     async def read(self, num_bytes: int, partial: bool = False) -> bytes:
