@@ -26,9 +26,9 @@
     <script>(function () { var el = document.documentElement, m = localStorage.getItem("/cats-python/doc_theme"), wm = window.matchMedia; if (m === "dark" || (!m && wm && wm("(prefers-color-scheme: dark)").matches)) { el.classList.add("dark") } else { el.classList.remove("dark") } })();</script>
 
     <link href="/cats-python/img/favicon.png" rel="icon" />
-    <link href="/cats-python/resources/css/retype.css?v=1.9.683714507525" rel="stylesheet" data-turbo-track="reload" />
+    <link href="/cats-python/resources/css/retype.css?v=1.9.683808513018" rel="stylesheet" data-turbo-track="reload" />
 
-    <script type="text/javascript" src="/cats-python/resources/js/config.js?v=1.9.683714507525" defer data-turbo-track="reload"></script>
+    <script type="text/javascript" src="/cats-python/resources/js/config.js?v=1.9.683808513018" defer data-turbo-track="reload"></script>
     <script type="text/javascript" src="/cats-python/resources/js/retype.js?v=1.9" defer data-turbo-track="reload"></script>
 </head>
     <body>
@@ -224,18 +224,45 @@ to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
 <ul class="contains-task-list">
 <li class="task-list-item"><input disabled="disabled" type="checkbox" /> Added different scheme language support: YAML, TOML</li>
 </ul>
-<doc-anchor-target id="400-">
+<doc-anchor-target id="401-">
     <h2>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#400-">#</doc-anchor-trigger>
-        <span><code v-pre>4.0.0</code> <span class="no-link inline-flex items-center justify-center font-medium leading-none whitespace-nowrap text-blue-500 dark:text-blue-400 border border-blue-500 dark:border-blue-400 h-6 px-2 text-xs rounded-md">
+        <doc-anchor-trigger class="header-anchor-trigger" to="#401-">#</doc-anchor-trigger>
+        <span><code v-pre>4.0.1</code> <span class="no-link inline-flex items-center justify-center font-medium leading-none whitespace-nowrap text-blue-500 dark:text-blue-400 border border-blue-500 dark:border-blue-400 h-6 px-2 text-xs rounded-md">
             <span>LATEST</span>
         </span></span>
     </h2>
 </doc-anchor-target>
-<p>Released: 2021-08-31</p>
+<p>Released: 2021-09-01</p>
 <doc-anchor-target id="added-1">
     <h3>
         <doc-anchor-trigger class="header-anchor-trigger" to="#added-1">#</doc-anchor-trigger>
+        <span>Added</span>
+    </h3>
+</doc-anchor-target>
+<ul class="contains-task-list">
+<li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> Added <code v-pre>async Server.broadcast(channel, *args, **kwargs)</code> method to send message to each connection in specified
+channel in all running servers</li>
+</ul>
+<doc-anchor-target id="fixed">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#fixed">#</doc-anchor-trigger>
+        <span>Fixed</span>
+    </h3>
+</doc-anchor-target>
+<ul class="contains-task-list">
+<li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> Fixed <code v-pre>Connection.send</code> and <code v-pre>Connection.send_stream</code> were not present in base class</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> Removed redundant <code v-pre>Python 3.9</code> classifier</li>
+</ul>
+<doc-anchor-target id="400">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#400">#</doc-anchor-trigger>
+        <span><code v-pre>4.0.0</code></span>
+    </h2>
+</doc-anchor-target>
+<p>Released: 2021-08-31</p>
+<doc-anchor-target id="added-2">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#added-2">#</doc-anchor-trigger>
         <span>Added</span>
     </h3>
 </doc-anchor-target>
@@ -271,9 +298,9 @@ to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
 <ul class="contains-task-list">
 <li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> Removed <code v-pre>cats.struct</code> module</li>
 </ul>
-<doc-anchor-target id="fixed">
+<doc-anchor-target id="fixed-1">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#fixed">#</doc-anchor-trigger>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#fixed-1">#</doc-anchor-trigger>
         <span>Fixed</span>
     </h3>
 </doc-anchor-target>
@@ -304,9 +331,9 @@ to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
     </h2>
 </doc-anchor-target>
 <p>Released: 2021-08-08</p>
-<doc-anchor-target id="added-2">
+<doc-anchor-target id="added-3">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#added-2">#</doc-anchor-trigger>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#added-3">#</doc-anchor-trigger>
         <span>Added</span>
     </h3>
 </doc-anchor-target>
@@ -320,9 +347,9 @@ to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
     </h2>
 </doc-anchor-target>
 <p>Released: 2021-08-08</p>
-<doc-anchor-target id="fixed-1">
+<doc-anchor-target id="fixed-2">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#fixed-1">#</doc-anchor-trigger>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#fixed-2">#</doc-anchor-trigger>
         <span>Fixed</span>
     </h3>
 </doc-anchor-target>
@@ -341,9 +368,9 @@ to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
     </h2>
 </doc-anchor-target>
 <p>Released: 2021-08-02</p>
-<doc-anchor-target id="fixed-2">
+<doc-anchor-target id="fixed-3">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#fixed-2">#</doc-anchor-trigger>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#fixed-3">#</doc-anchor-trigger>
         <span>Fixed</span>
     </h3>
 </doc-anchor-target>
@@ -357,9 +384,9 @@ to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
     </h2>
 </doc-anchor-target>
 <p>Released: 2021-07-30</p>
-<doc-anchor-target id="added-3">
+<doc-anchor-target id="added-4">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#added-3">#</doc-anchor-trigger>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#added-4">#</doc-anchor-trigger>
         <span>Added</span>
     </h3>
 </doc-anchor-target>
@@ -382,9 +409,9 @@ to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
 <ul class="contains-task-list">
 <li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> We are now following <code v-pre>Keep a Changelog</code> <code v-pre>(╯°□°）╯︵ ┻━┻</code></li>
 </ul>
-<doc-anchor-target id="fixed-3">
+<doc-anchor-target id="fixed-4">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#fixed-3">#</doc-anchor-trigger>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#fixed-4">#</doc-anchor-trigger>
         <span>Fixed</span>
     </h3>
 </doc-anchor-target>
@@ -407,9 +434,9 @@ to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
 <ul class="contains-task-list">
 <li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> Added <code v-pre>__slots__</code> for remaining classes</li>
 </ul>
-<doc-anchor-target id="fixed-4">
+<doc-anchor-target id="fixed-5">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#fixed-4">#</doc-anchor-trigger>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#fixed-5">#</doc-anchor-trigger>
         <span>Fixed</span>
     </h3>
 </doc-anchor-target>
@@ -423,9 +450,9 @@ to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
     </h2>
 </doc-anchor-target>
 <p>Released: 2021-07-19</p>
-<doc-anchor-target id="fixed-5">
+<doc-anchor-target id="fixed-6">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#fixed-5">#</doc-anchor-trigger>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#fixed-6">#</doc-anchor-trigger>
         <span>Fixed</span>
     </h3>
 </doc-anchor-target>
@@ -440,9 +467,9 @@ to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
     </h2>
 </doc-anchor-target>
 <p>Released: 2021-07-07</p>
-<doc-anchor-target id="fixed-6">
+<doc-anchor-target id="fixed-7">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#fixed-6">#</doc-anchor-trigger>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#fixed-7">#</doc-anchor-trigger>
         <span>Fixed</span>
     </h3>
 </doc-anchor-target>
@@ -456,9 +483,9 @@ to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
     </h2>
 </doc-anchor-target>
 <p>Released: 2021-07-07</p>
-<doc-anchor-target id="added-4">
+<doc-anchor-target id="added-5">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#added-4">#</doc-anchor-trigger>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#added-5">#</doc-anchor-trigger>
         <span>Added</span>
     </h3>
 </doc-anchor-target>
@@ -474,9 +501,9 @@ to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
 <ul class="contains-task-list">
 <li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> Removed redundant prints</li>
 </ul>
-<doc-anchor-target id="fixed-7">
+<doc-anchor-target id="fixed-8">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#fixed-7">#</doc-anchor-trigger>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#fixed-8">#</doc-anchor-trigger>
         <span>Fixed</span>
     </h3>
 </doc-anchor-target>
@@ -491,9 +518,9 @@ to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
     </h2>
 </doc-anchor-target>
 <p>Released: 2021-07-07</p>
-<doc-anchor-target id="added-5">
+<doc-anchor-target id="added-6">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#added-5">#</doc-anchor-trigger>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#added-6">#</doc-anchor-trigger>
         <span>Added</span>
     </h3>
 </doc-anchor-target>
@@ -517,9 +544,9 @@ to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
     </h2>
 </doc-anchor-target>
 <p>Released: 2021-07-07</p>
-<doc-anchor-target id="added-6">
+<doc-anchor-target id="added-7">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#added-6">#</doc-anchor-trigger>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#added-7">#</doc-anchor-trigger>
         <span>Added</span>
     </h3>
 </doc-anchor-target>
@@ -543,9 +570,9 @@ to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
     </h2>
 </doc-anchor-target>
 <p>Released: 2021-07-07</p>
-<doc-anchor-target id="added-7">
+<doc-anchor-target id="added-8">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#added-7">#</doc-anchor-trigger>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#added-8">#</doc-anchor-trigger>
         <span>Added</span>
     </h3>
 </doc-anchor-target>
@@ -560,9 +587,9 @@ to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
     </h2>
 </doc-anchor-target>
 <p>Released: 2021-07-07</p>
-<doc-anchor-target id="fixed-8">
+<doc-anchor-target id="fixed-9">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#fixed-8">#</doc-anchor-trigger>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#fixed-9">#</doc-anchor-trigger>
         <span>Fixed</span>
     </h3>
 </doc-anchor-target>
