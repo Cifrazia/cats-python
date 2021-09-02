@@ -1,10 +1,12 @@
 from collections import defaultdict
-from typing import Iterable, Type
+from functools import partial
+from typing import Awaitable, Iterable, Type
 
+from cats.v2.action import ActionLike
 from cats.v2.config import Config
 from cats.v2.connection import Connection
-from cats.v2.server.handlers import Api, Handler, HandlerItem, override_run
-from cats.v2.server.middleware import Middleware, default_error_handler
+from cats.v2.server.handlers import Api, Handler, HandlerItem
+from cats.v2.server.middleware import Forward, Middleware, default_error_handler
 
 __all__ = [
     'Application',
@@ -12,7 +14,7 @@ __all__ = [
 
 
 class Application:
-    __slots__ = ('config', 'ConnectionClass', '_handlers', '_channels')
+    __slots__ = ('config', 'ConnectionClass', '_handlers', '_channels', '_runner')
 
     def __init__(self, apis: list[Api], middleware: list[Middleware] = None, *, config: Config = None,
                  connection: Type[Connection] = None):
@@ -29,7 +31,16 @@ class Application:
             api.update(i)
 
         self._handlers = api.compute()
-        override_run(middleware)
+        self._runner: Forward = self._run
+        if middleware:
+            for md in middleware:
+                self._runner = partial(md, forward=self._runner)
+
+    async def _run(self, handler: Handler) -> ActionLike | None:
+        return await handler()
+
+    def run(self, handler: Handler) -> Awaitable[ActionLike | None]:
+        return self._runner(handler)
 
     def get_handlers_by_id(self, handler_id: int) -> list[HandlerItem] | HandlerItem | None:
         return self._handlers.get(handler_id)

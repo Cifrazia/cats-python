@@ -2,7 +2,7 @@ import asyncio
 from logging import getLogger
 from pathlib import Path
 from time import time_ns
-from typing import AsyncIterator, Type
+from typing import AsyncIterator, Type, TypeAlias, TypeVar
 
 import struct_model
 
@@ -10,6 +10,7 @@ from cats.types import BytesAnyGen, BytesAsyncGen, Headers, T_Headers
 from cats.v2.connection import Connection
 
 __all__ = [
+    'ActionLike',
     'Input',
     'BaseAction',
     'BasicAction',
@@ -25,6 +26,8 @@ logging = getLogger('CATS.conn')
 
 MAX_IN_MEMORY: int
 MAX_CHUNK_READ: int
+
+ActionLike: TypeAlias = TypeVar('ActionLike', bound='Action')
 
 
 class Input:
@@ -203,9 +206,9 @@ class InputAction(BasicAction):
     async def send(self, conn: Connection) -> None: ...
 
     async def reply(self, data=None, data_type: int = None, compression: int = None, *,
-                    headers: T_Headers = None, status: int = None) -> Action | None: ...
+                    headers: T_Headers = None, status: int = None) -> ActionLike | None: ...
 
-    async def cancel(self) -> Action | None: ...
+    async def cancel(self) -> ActionLike | None: ...
 
 
 class DownloadSpeedAction(BaseAction):

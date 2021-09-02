@@ -13,7 +13,20 @@ Released: 2021-09-20
 
 - [ ] Added different scheme language support: YAML, TOML
 
-## `4.0.1` [!badge variant="info" text="LATEST"]
+## `4.1.0` [!badge variant="info" text="LATEST"]
+
+Released: 2021-09-01
+
+### Changed
+
+- [x] Changed `Middleware` structure
+
+### Fixed
+
+- [x] Fixed broken arguments in `Middleware`
+- [x] Fixed typing for actions and handlers
+
+## `4.0.1`
 
 Released: 2021-09-01
 

@@ -13,7 +13,7 @@ from cats.errors import ProtocolError
 from cats.identity import Identity
 from cats.types import BytesAnyGen
 from cats.utils import as_uint, to_uint
-from cats.v2.action import Action, BaseAction, PingAction, StreamAction
+from cats.v2.action import Action, ActionLike, BaseAction, PingAction, StreamAction
 from cats.v2.config import Config
 from cats.v2.connection import Connection as BaseConnection
 from cats.v2.statement import ClientStatement, ServerStatement
@@ -119,7 +119,7 @@ class Connection(BaseConnection):
         await self.write(to_uint(speed, 4))
 
     async def send(self, handler_id: int, data=None, message_id=None, compression=None, *,
-                   headers=None, status=None) -> Action | None:
+                   headers=None, status=None) -> ActionLike | None:
         action = Action(data=data, headers=headers, status=status,
                         message_id=self.get_free_message_id() if message_id is None else message_id,
                         handler_id=handler_id, compression=compression)
@@ -128,7 +128,7 @@ class Connection(BaseConnection):
 
     async def send_stream(self, handler_id: int, data: BytesAnyGen, data_type: int,
                           message_id=None, compression=None, *,
-                          headers=None, status=None) -> Action | None:
+                          headers=None, status=None) -> ActionLike | None:
         action = StreamAction(data=data, headers=headers, status=status,
                               message_id=self.get_free_message_id() if message_id is None else message_id,
                               handler_id=handler_id, data_type=data_type, compression=compression)

@@ -3,7 +3,7 @@ from io import BytesIO
 from pathlib import Path
 from struct import Struct
 from time import time_ns
-from typing import NamedTuple, Type
+from typing import NamedTuple, Type, TypeAlias, TypeVar
 
 import math
 import struct_model
@@ -15,6 +15,7 @@ from cats.v2.codecs import Codec, T_FILE, T_JSON
 from cats.v2.compression import Compressor
 
 __all__ = [
+    'ActionLike',
     'Input',
     'BaseAction',
     'BasicAction',
@@ -29,6 +30,8 @@ __all__ = [
 MAX_IN_MEMORY = 1 << 24
 MAX_CHUNK_READ = 1 << 20
 PROPOSAL_PLACEHOLDER = bytes(5000)
+
+ActionLike: TypeAlias = TypeVar('ActionLike', bound='Action')
 
 
 class Input:
@@ -601,14 +604,14 @@ class InputAction(Action):
                 data.unlink(missing_ok=True)
 
     async def reply(self, data=None, data_type=None, compression=None, *,
-                    headers=None, status=None) -> Action | None:
+                    headers=None, status=None) -> ActionLike | None:
         action = InputAction(data, headers=headers, status=status, message_id=self.message_id,
                              data_type=data_type, compression=compression)
         action.offset = self.offset
         await action.send(self.conn)
         return await self.conn.recv(self.message_id)  # noqa
 
-    async def cancel(self) -> Action | None:
+    async def cancel(self) -> ActionLike | None:
         res = CancelInputAction(self.message_id)
         await res.send(self.conn)
         return await self.conn.recv(self.message_id)  # noqa

@@ -195,18 +195,6 @@ toml = "*"
 testing = ["fields", "hunter", "process-tests", "six", "pytest-xdist", "virtualenv"]
 
 [[package]]
-name = "pytest-tornado"
-version = "0.8.1"
-description = "A py.test plugin providing fixtures and markers to simplify testing of asynchronous tornado applications."
-category = "dev"
-optional = false
-python-versions = "*"
-
-[package.dependencies]
-pytest = ">=3.6"
-tornado = ">=4.1"
-
-[[package]]
 name = "pytz"
 version = "2021.1"
 description = "World timezone definitions, modern and historical"
@@ -315,7 +303,7 @@ pydantic = ["pydantic"]
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.10.0rc1, <4.0"
-content-hash = "f2aa8e7589a5b6ce6217690cdd521510931b4d012a27d860146479af9831abec"
+content-hash = "dd8edc90081f5a02fa5af31ccdcb9aa7b3902dc777b04ddaba944fed263d798d"
 
 [metadata.files]
 atomicwrites = [
@@ -455,10 +443,6 @@ pytest-asyncio = [
 pytest-cov = [
     { file = "pytest-cov-2.12.1.tar.gz", hash = "sha256:261ceeb8c227b726249b376b8526b600f38667ee314f910353fa318caa01f4d7" },
     { file = "pytest_cov-2.12.1-py2.py3-none-any.whl", hash = "sha256:261bb9e47e65bd099c89c3edf92972865210c36813f80ede5277dceb77a4a62a" },
-]
-pytest-tornado = [
-    { file = "pytest-tornado-0.8.1.tar.gz", hash = "sha256:b9fa1930c333b9dfe29bde90f9f42e6643278b5d0c95528a8302a7454fd3f1b1" },
-    { file = "pytest_tornado-0.8.1-py2.py3-none-any.whl", hash = "sha256:8d43f400c64fabc85af58891096d4f93f05e9f9baae2c751e039932a0f62d0b5" },
 ]
 pytz = [
     { file = "pytz-2021.1-py2.py3-none-any.whl", hash = "sha256:eb10ce3e7736052ed3623d49975ce333bcd712c7bb19a58b9e2089d4057d0798" },

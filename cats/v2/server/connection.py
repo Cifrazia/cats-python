@@ -98,7 +98,7 @@ class Connection(BaseConnection):
             async with self.preserve_message_id(action.message_id):
                 handler = self.dispatch(action.handler_id)
                 try:
-                    result = await handler.run(handler(action))
+                    result = await self.app.run(handler(action))
                     if result is not None:
                         if not isinstance(result, Action):
                             raise ProtocolError('Returned invalid response')

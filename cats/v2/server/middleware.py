@@ -1,25 +1,33 @@
 import asyncio
 import traceback
 from logging import getLogger
-from typing import Awaitable, Callable
+from typing import Protocol
 
 from tornado.iostream import StreamClosedError
 
-from cats.v2.action import Action
+from cats.v2.action import Action, ActionLike
+from cats.v2.server.handlers import Handler
 
 __all__ = [
+    'Forward',
     'Middleware',
     'default_error_handler',
 ]
 
 logging = getLogger('CATS')
 
-Middleware = Callable[[Callable], Awaitable[Action | None]]
+
+class Forward(Protocol):
+    async def __call__(self, handler: Handler) -> ActionLike | None: ...
 
 
-async def default_error_handler(handler: Callable) -> Action | None:
+class Middleware(Protocol):
+    async def __call__(self, handler: Handler, forward: Forward) -> ActionLike | None: ...
+
+
+async def default_error_handler(handler: Handler, forward: Forward) -> ActionLike | None:
     try:
-        return await handler()
+        return await forward(handler)
     except (KeyboardInterrupt, StreamClosedError):
         raise
     except asyncio.CancelledError:

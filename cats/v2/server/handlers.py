@@ -1,7 +1,6 @@
 import asyncio
 from collections import defaultdict
 from dataclasses import dataclass
-from functools import partial
 from logging import getLogger
 from random import random
 from time import time
@@ -10,14 +9,13 @@ from typing import Awaitable, Type
 from cats.identity import Identity, IdentityObject
 from cats.plugins import Form, Scheme, SchemeTypes, scheme_json, scheme_load
 from cats.types import Json, List, T_Headers
-from cats.v2.action import Action, BaseAction, InputAction
+from cats.v2.action import Action, ActionLike, InputAction
 from cats.v2.codecs import T_FILE, T_JSON
 
 __all__ = [
     'HandlerItem',
     'Api',
     'Handler',
-    'override_run',
 ]
 
 logging = getLogger('CATS')
@@ -129,14 +127,10 @@ class Handler:
         api.register(HandlerItem(id, name, cls, version, end_version))
         cls.handler_id = id
 
-    @staticmethod
-    def run(handler: 'Handler') -> Awaitable[BaseAction | None]:
-        return handler()
-
-    async def __call__(self) -> BaseAction | None:
+    async def __call__(self) -> ActionLike | None:
         st = time()
         res = await self.prepare()
-        if not isinstance(res, BaseAction):
+        if not isinstance(res, Action):
             res = await self.handle()
         if self.fix_exec_time is not None:
             sp = time() - st
@@ -174,7 +168,7 @@ class Handler:
         return scheme_load(self.Loader, data, many=many, plain=plain)
 
     async def json_dump(self, data, *, headers: T_Headers = None,
-                        status: int = 200, many: bool = None, plain: bool = False) -> Action:
+                        status: int = 200, many: bool = None, plain: bool = False) -> ActionLike:
         if self.Dumper is not None:
             if not plain:
                 if many is None:
@@ -279,10 +273,3 @@ class Handler:
             raise ValueError(f'Received File amount is less than allowed [{min_len}]')
         if max_len is not None and max_len < x:
             raise ValueError(f'Received File amount is more than allowed [{max_len}]')
-
-
-def override_run(middleware: list):
-    if middleware:
-        Handler.run = middleware.pop(0)
-    for fn in middleware:
-        Handler.run = partial(fn, Handler.run)
