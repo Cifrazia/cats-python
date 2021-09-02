@@ -13,9 +13,17 @@ Released: 2021-09-20
 
 - [ ] Added different scheme language support: YAML, TOML
 
-## `4.1.0` [!badge variant="info" text="LATEST"]
+## `4.1.1` [!badge variant="info" text="LATEST"]
 
-Released: 2021-09-01
+Released: 2021-09-02
+
+### Added
+
+- [x] Added `uvloop` support
+
+## `4.1.0`
+
+Released: 2021-09-02
 
 ### Changed
 

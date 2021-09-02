@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cats-python"
-version = "4.1.0"
+version = "4.1.1"
 description = "Cifrazia Action Transport System for Python"
 authors = ["Bogdan Parfenov <adam.brian.bright@gmail.com>"]
 license = "MIT"
@@ -59,6 +59,7 @@ pytest = "^6.2.5"
 pytest-asyncio = "^0.15.1"
 pytest-cov = "^2.12.1"
 pydantic = "^1.8.2"
+uvloop = "^0.16.0"
 
 
 [build-system]

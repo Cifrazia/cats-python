@@ -2,6 +2,7 @@ import asyncio
 import logging
 import platform
 
+import uvloop
 from pytest import fixture, mark
 
 from cats.v2 import Config, Handshake, SHA256TimeHandshake
@@ -15,6 +16,8 @@ logging.basicConfig(level='DEBUG', force=True)
 def event_loop():
     if platform.system() == 'Windows':
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    else:
+        uvloop.install()
     return asyncio.get_event_loop()
 
 
