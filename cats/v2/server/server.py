@@ -3,6 +3,7 @@ import socket
 import ssl
 from contextlib import asynccontextmanager
 from logging import getLogger
+from typing import Callable
 
 from tornado.iostream import IOStream
 from tornado.tcpserver import TCPServer
@@ -42,6 +43,17 @@ class Server(TCPServer):
             conn.send(handler_id, data, message_id, compression, headers=headers, status=status)
             for server in cls.running_servers()
             for conn in server.app.channel(channel)
+        ))
+
+    @classmethod
+    async def conditional_broadcast(cls, channel: str, _filter: Callable[['Server', Connection], bool],
+                                    handler_id: int, data=None, message_id: int = None,
+                                    compression: int = None, *, headers=None, status: int = None):
+        return await asyncio.gather(*(
+            conn.send(handler_id, data, message_id, compression, headers=headers, status=status)
+            for server in cls.running_servers()
+            for conn in server.app.channel(channel)
+            if _filter(server, conn)
         ))
 
     async def handle_stream(self, stream: IOStream, address: tuple[str, int]) -> None:

@@ -13,7 +13,15 @@ Released: 2021-09-20
 
 - [ ] Added different scheme language support: YAML, TOML
 
-## `4.1.1` [!badge variant="info" text="LATEST"]
+## `4.2.0` [!badge variant="info" text="LATEST"]
+
+Released: 2021-09-04
+
+### Added
+
+- [x] Added `Server.conditional_broadcast(channel, _filter, ...)` method
+
+## `4.1.1`
 
 Released: 2021-09-02
 
