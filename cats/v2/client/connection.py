@@ -1,5 +1,6 @@
 import asyncio
 import inspect
+from collections import defaultdict
 from logging import getLogger
 from random import randint
 from time import time, time_ns
@@ -29,6 +30,7 @@ class Connection(BaseConnection):
         'time_delta',
         'subscriptions',
         'address',
+        '_sub_id',
         '_stream',
         '_listener',
         '_recv_pool',
@@ -40,7 +42,8 @@ class Connection(BaseConnection):
         super().__init__(conf)
         self.api_version: int = api_version
         self.time_delta: float = 0.0
-        self.subscriptions: dict[int, Callable[[Action], Awaitable[None] | None]] = {}
+        self.subscriptions: dict[int, dict[int, Callable[[Action], Awaitable[None] | None]]] = defaultdict(dict)
+        self._sub_id: int = 0
         self._listener: asyncio.Task | None = None
         self._recv_pool: dict[int, asyncio.Future] = {}
         self._stream: IOStream | None = None
@@ -105,21 +108,29 @@ class Connection(BaseConnection):
 
     async def handle_broadcast(self, action: Action):
         if action.handler_id in self.subscriptions:
-            fn = self.subscriptions[action.handler_id]
-            res = fn(action)
-            if inspect.isawaitable(res):
-                await res
+            for fn in self.subscriptions[action.handler_id].values():
+                res = fn(action)
+                if inspect.isawaitable(res):
+                    await res
 
     async def handle_ping_action(self, action: PingAction):
         self.debug(f'Pong {action.send_time} [-] {action.recv_time}')
         await action.dump_data(0)
 
-    def subscribe(self, handler_id: int, handler: Callable[[Action], Awaitable[None] | None]):
-        self.subscriptions[handler_id] = handler
+    def subscribe(self, handler_id: int, handler: Callable[[Action], Awaitable[None] | None]) -> int:
+        self._sub_id += 1
+        self.subscriptions[handler_id][self._sub_id] = handler
+        return self._sub_id
 
-    def unsubscribe(self, handler_id: int):
+    def unsubscribe(self, handler_id: int, handler: Callable[[Action], Awaitable[None] | None] | int) -> None:
         if handler_id in self.subscriptions:
-            self.subscriptions.pop(handler_id)
+            if isinstance(handler, int):
+                self.subscriptions[handler_id].pop(handler, None)
+            else:
+                self.subscriptions[handler_id] = {
+                    k: v for k, v in self.subscriptions[handler_id]
+                    if v is not handler
+                }
 
     async def set_download_speed(self, speed=0):
         await self.write(b'\x05')

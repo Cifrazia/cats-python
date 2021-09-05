@@ -21,10 +21,10 @@ class Connection(BaseConn):
 
     async def handle_broadcast(self, action: Action):
         if action.handler_id in self.subscriptions:
-            fn = self.subscriptions[action.handler_id]
-            res = fn(action)
-            if inspect.isawaitable(res):
-                await res
+            for fn in self.subscriptions[action.handler_id].values():
+                res = fn(action)
+                if inspect.isawaitable(res):
+                    await res
             if not self.store_handled_broadcast:
                 return
         self.broadcast_inbox.append(action)
@@ -46,5 +46,7 @@ class Connection(BaseConn):
                 self.broadcast_inbox.pop(i)
             return action
         fut = asyncio.Future()
-        self.subscribe(handler_id, lambda res: fut.set_result(res))
-        return await asyncio.wait_for(fut, 5.0)
+        sub_id = self.subscribe(handler_id, lambda res: fut.set_result(res))
+        response = await asyncio.wait_for(fut, 5.0)
+        self.unsubscribe(handler_id, sub_id)
+        return response
