@@ -64,34 +64,34 @@ specifies `schemeFormat: JSON`, then server will return statement in JSON.
 
 ==- Client: client statement
 
-Payload length: `81`
+Payload length: `83`
 
 ```
-00 00 00 51
+00 00 00 53
 ```
 
-Payload: `{"api":1,"clientTime":1629439550942,"schemeFormat":"JSON","compressors":["zlib"]}`
+Payload: `{"api":1,"client_time":1629439550942,"scheme_format":"JSON","compressors":["zlib"]}`
 
-```
-7B 22 61 70 69 22 3A 31 2C 22 63 6C 69 65 6E 74 54 69 6D 65 22 3A 31 36 
-32 39 34 33 39 35 35 30 39 34 32 2C 22 73 63 68 65 6D 65 46 6F 72 6D 61 
-74 22 3A 22 4A 53 4F 4E 22 2C 22 63 6F 6D 70 72 65 73 73 6F 72 73 22 3A 
-5B 22 7A 6C 69 62 22 5D 7D
+``` 
+7B 22 61 70 69 22 3A 31 2C 22 63 6C 69 65 6E 74 5F 74 69 6D 65 22 3A 31
+36 32 39 34 33 39 35 35 30 39 34 32 2C 22 73 63 68 65 6D 65 5F 66 6F 72
+6D 61 74 22 3A 22 4A 53 4F 4E 22 2C 22 63 6F 6D 70 72 65 73 73 6F 72 73
+22 3A 5B 22 7A 6C 69 62 22 5D 7D
 ``` 
 
 ==- Server: server statement
 
-Payload length: `28`
+Payload length: `29`
 
 ```
-00 00 00 1C
+00 00 00 1D
 ``` 
 
-Payload: `{"serverTime":1629439550942}`
+Payload: `{"server_time":1629439550942}`
 
 ```
-7B 22 73 65 72 76 65 72 54 69 6D 65 22 3A 31 36 32 39 34 33 39 35 35 30 
-39 34 32 7D
+7B 22 73 65 72 76 65 72 5F 74 69 6D 65 22 3A 31 36 32 39 34 33 39 35 35
+30 39 34 32 7D
 ```
 
 ===

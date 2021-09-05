@@ -104,8 +104,10 @@ class Connection:
         :return:
         """
         await self.init()
+
         self.send_task = self._loop.create_task(self.send_loop())
         self.send_task.add_done_callback(self.on_tick_done)
+
         await self.recv_loop()
 
     async def init(self):

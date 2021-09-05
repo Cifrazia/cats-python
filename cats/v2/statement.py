@@ -26,12 +26,12 @@ class Statement:
 @dataclass
 class ClientStatement(Statement):
     api: int
-    clientTime: int
-    schemeFormat: Literal['JSON']
+    client_time: int
+    scheme_format: Literal['JSON']
     compressors: list[Literal['gzip', 'zlib']]
-    defaultCompression: Literal['gzip', 'zlib']
+    default_compression: Literal['gzip', 'zlib']
 
 
 @dataclass
 class ServerStatement(Statement):
-    serverTime: int
+    server_time: int

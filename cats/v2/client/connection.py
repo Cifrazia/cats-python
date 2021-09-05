@@ -33,6 +33,8 @@ class Connection(BaseConnection):
         '_sub_id',
         '_stream',
         '_listener',
+        '_sender',
+        '_pinger',
         '_recv_pool',
     )
     PROTOCOL_VERSION: int = 2
@@ -45,6 +47,8 @@ class Connection(BaseConnection):
         self.subscriptions: dict[int, dict[int, Callable[[Action], Awaitable[None] | None]]] = defaultdict(dict)
         self._sub_id: int = 0
         self._listener: asyncio.Task | None = None
+        self._sender: asyncio.Task | None = None
+        self._pinger: asyncio.Task | None = None
         self._recv_pool: dict[int, asyncio.Future] = {}
         self._stream: IOStream | None = None
         self.address: tuple[str, int] = '0.0.0.0', 0
@@ -59,8 +63,13 @@ class Connection(BaseConnection):
 
     async def start(self) -> None:
         await self.init()
-        self._loop.create_task(self.send_loop()).add_done_callback(self.on_tick_done)
-        self._loop.create_task(self.ping()).add_done_callback(self.on_tick_done)
+
+        self._sender = self._loop.create_task(self.send_loop())
+        self._pinger = self._loop.create_task(self.ping())
+
+        self._sender.add_done_callback(self.on_tick_done)
+        self._pinger.add_done_callback(self.on_tick_done)
+
         await self.recv_loop()
 
     async def init(self):
@@ -71,17 +80,17 @@ class Connection(BaseConnection):
 
         client_stmt = ClientStatement(
             api=self.api_version,
-            clientTime=time_ns() // 1000_000,
-            schemeFormat='JSON',
+            client_time=time_ns() // 1000_000,
+            scheme_format='JSON',
             compressors=['gzip', 'zlib'],
-            defaultCompression='zlib',
+            default_compression='zlib',
         )
         self.set_compressors(['gzip', 'zlib'], 'zlib')
         await self.write(client_stmt.pack())
         stmt: ServerStatement = ServerStatement.unpack(
             await self.read(as_uint(await self.read(4)))
         )
-        self.time_delta = (stmt.serverTime / 1000) - time()
+        self.time_delta = (stmt.server_time / 1000) - time()
 
         if self.conf.handshake is not None:
             await self.conf.handshake.send(self)
@@ -183,7 +192,7 @@ class Connection(BaseConnection):
     async def ping(self):
         if not self.conf.idle_timeout:
             return
-        wait = max(0.1, round(self.conf.idle_timeout / 2, 2))
+        wait = max(0.1, round(self.conf.idle_timeout * 0.9, 2))
         pong = PingAction()
         while self.is_open:
             await asyncio.sleep(wait)
@@ -201,3 +210,5 @@ class Connection(BaseConnection):
     def _close_tasks(self):
         yield from super()._close_tasks()
         yield from self._recv_pool.values()
+        yield self._pinger
+        yield self._sender

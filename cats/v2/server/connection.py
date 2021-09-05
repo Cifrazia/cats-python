@@ -58,11 +58,11 @@ class Connection(BaseConnection):
             await self.read(as_uint(await self.read(4)))
         )
         self.api_version = self.client.api
-        self.set_compressors(self.client.compressors, self.client.defaultCompression)
+        self.set_compressors(self.client.compressors, self.client.default_compression)
         self.debug(f'[RECV {self.address}] {self.client}')
 
         server_stmt = ServerStatement(
-            serverTime=time_ns() // 1000_000,
+            server_time=time_ns() // 1000_000,
         )
         await self.write(server_stmt.pack())
         self.debug(f'[SEND {self.address}] {server_stmt}')
@@ -211,12 +211,15 @@ class Connection(BaseConnection):
         return res
 
     def reset_idle_timer(self):
-        if self.conf.idle_timeout > 0:
-            if self._idle_timer is not None:
-                self._idle_timer.cancel()
+        if not self.conf.idle_timeout > 0:
+            return
+        if self._idle_timer is not None:
+            self._idle_timer.cancel()
 
-            self._idle_timer = self._loop.call_later(self.conf.idle_timeout,
-                                                     functools.partial(self.close, asyncio.TimeoutError()))
+        self._idle_timer = self._loop.call_later(
+            self.conf.idle_timeout,
+            functools.partial(self.close, asyncio.TimeoutError())
+        )
 
     def get_free_message_id(self) -> int:
         while True:
@@ -225,5 +228,5 @@ class Connection(BaseConnection):
                 return message_id
 
     def _close_tasks(self):
-        yield from super()._close_tasks()
         yield self._idle_timer
+        yield from super()._close_tasks()

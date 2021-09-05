@@ -13,9 +13,22 @@ Released: 2021-09-20
 
 - [ ] Added different scheme language support: YAML, TOML
 
-## `4.2.1` [!badge variant="info" text="LATEST"]
+## `4.3.0` [!badge variant="info" text="LATEST"]
 
 Released: 2021-09-05
+
+### Changed
+
+- [x] **Statement**s are now using `snake_case` instead of `camelCase`
+- [x] Tasks for `client.send_loop` and `client.ping` are now being closed on exit
+- [x] `client.ping` now uses `90%` of `Config.idle_timeout` or `0.1s`
+- [x] `cats.version` is now `tuple`, instead of `str`
+
+## `4.2.1`
+
+Released: 2021-09-05
+
+### Added
 
 - [x] Added `test_utils` module:
   - [x] Added `client.Connection` test class with broadcast inbox
