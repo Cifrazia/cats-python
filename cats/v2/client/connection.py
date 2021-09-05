@@ -87,25 +87,32 @@ class Connection(BaseConnection):
 
     async def handle(self, action: BaseAction):
         if isinstance(action, PingAction):
-            self.debug(f'Pong {action.send_time} [-] {action.recv_time}')
-            await action.dump_data(0)
+            await self.handle_ping_action(action)
         elif isinstance(action, Action):
             await action.recv_data()
             if action.message_id >= 0x8000:
-                # Broadcast
-                if action.handler_id in self.subscriptions:
-                    fn = self.subscriptions[action.handler_id]
-                    res = fn(action)
-                    if inspect.isawaitable(res):
-                        await res
+                await self.handle_broadcast(action)
             elif action.message_id in self._recv_pool:
-                # Reply
-                future = self._recv_pool.pop(action.message_id)
-                future.set_result(action)
+                await self.handle_response(action)
             else:
                 self.debug(f'Received unexpected action {action = }')
         else:
             self.debug(f'Received unsupported Action: {type(action).__qualname__}')
+
+    async def handle_response(self, action: Action):
+        future = self._recv_pool.pop(action.message_id)
+        future.set_result(action)
+
+    async def handle_broadcast(self, action: Action):
+        if action.handler_id in self.subscriptions:
+            fn = self.subscriptions[action.handler_id]
+            res = fn(action)
+            if inspect.isawaitable(res):
+                await res
+
+    async def handle_ping_action(self, action: PingAction):
+        self.debug(f'Pong {action.send_time} [-] {action.recv_time}')
+        await action.dump_data(0)
 
     def subscribe(self, handler_id: int, handler: Callable[[Action], Awaitable[None] | None]):
         self.subscriptions[handler_id] = handler

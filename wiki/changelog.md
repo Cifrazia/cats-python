@@ -13,7 +13,15 @@ Released: 2021-09-20
 
 - [ ] Added different scheme language support: YAML, TOML
 
-## `4.2.0` [!badge variant="info" text="LATEST"]
+## `4.2.1` [!badge variant="info" text="LATEST"]
+
+Released: 2021-09-05
+
+- [x] Added `test_utils` module:
+  - [x] Added `client.Connection` test class with broadcast inbox
+  - [x] Added `pytest` plugin
+
+## `4.2.0`
 
 Released: 2021-09-04
 
