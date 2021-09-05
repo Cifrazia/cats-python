@@ -26,11 +26,11 @@
     <script>(function () { var el = document.documentElement, m = localStorage.getItem("/cats-python/doc_theme"), wm = window.matchMedia; if (m === "dark" || (!m && wm && wm("(prefers-color-scheme: dark)").matches)) { el.classList.add("dark") } else { el.classList.remove("dark") } })();</script>
 
     <link href="/cats-python/img/favicon.png" rel="icon" />
-    <link href="/cats-python/resources/css/retype.css?v=1.9.684144203772" rel="stylesheet" data-turbo-track="reload" />
+    <link href="/cats-python/resources/css/retype.css?v=1.9.684152475273" rel="stylesheet" data-turbo-track="reload" />
 
-    <script type="text/javascript" src="/cats-python/resources/js/config.js?v=1.9.684144203772" defer data-turbo-track="reload"></script>
+    <script type="text/javascript" src="/cats-python/resources/js/config.js?v=1.9.684152475273" defer data-turbo-track="reload"></script>
     <script type="text/javascript" src="/cats-python/resources/js/retype.js?v=1.9" defer data-turbo-track="reload"></script>
-    <script id="prism-js" type="text/javascript" src="/cats-python/resources/js/prism.js?v=1.9.684144203772" defer></script>
+    <script id="prism-js" type="text/javascript" src="/cats-python/resources/js/prism.js?v=1.9.684152475273" defer></script>
 </head>
     <body>
         <div id="docs-app" class="relative text-base antialiased text-gray-700 bg-white font-body dark:bg-dark-850 dark:text-dark-300">
@@ -228,16 +228,16 @@
   // Version of API (not protocol)
   &quot;api&quot;: 0,
   // Client local time in ms
-  &quot;clientTime&quot;: 16500123000,
+  &quot;client_time&quot;: 16500123000,
   // Which format to use for object encoding: JSON | YAML | TOML
-  &quot;schemeFormat&quot;: &quot;JSON&quot;,
+  &quot;scheme_format&quot;: &quot;JSON&quot;,
   // Compression algorithms, supported on client side: gzip | zlib
   &quot;compressors&quot;: [
     &quot;gzip&quot;,
     &quot;zlib&quot;
   ],
   // Optional. compressors[0] used by default
-  &quot;defaultCompression&quot;: &quot;zlib&quot;,
+  &quot;default_compression&quot;: &quot;zlib&quot;,
 }</code></pre>
 </doc-codeblock></div>
 </doc-tab>
@@ -245,25 +245,25 @@
 <template #title>YAML</template>
 <div class="codeblock-wrapper"><doc-codeblock line-numbers>
 <pre class="language-yaml"><code v-pre class="language-yaml">api: 0
-clientTime: 16500123000
-schemeFormat: JSON
+client_time: 16500123000
+scheme_format: JSON
 compressors:
   - gzip
   - zlib
-defaultCompression: zlib</code></pre>
+default_compression: zlib</code></pre>
 </doc-codeblock></div>
 </doc-tab>
 <doc-tab id="toml">
 <template #title>TOML</template>
 <div class="codeblock-wrapper"><doc-codeblock line-numbers>
 <pre class="language-toml"><code v-pre class="language-toml">api = 0.0
-clientTime = 16500123000.0
-schemeFormat = &quot;JSON&quot;
+client_time = 16500123000.0
+scheme_format = &quot;JSON&quot;
 compressors = [
   &quot;gzip&quot;,
   &quot;zlib&quot;
 ]
-defaultCompression = &quot;zlib&quot;</code></pre>
+default_compression = &quot;zlib&quot;</code></pre>
 </doc-codeblock></div>
 </doc-tab>
 </doc-tabs>
@@ -276,20 +276,20 @@ defaultCompression = &quot;zlib&quot;</code></pre>
 <div class="codeblock-wrapper"><doc-codeblock line-numbers>
 <pre class="language-json5"><code v-pre class="language-json5">{
   // Server local time in ms [UTC]
-  &quot;serverTime&quot;: 165000123000,
+  &quot;server_time&quot;: 165000123000,
 }</code></pre>
 </doc-codeblock></div>
 </doc-tab>
 <doc-tab id="yaml">
 <template #title>YAML</template>
 <div class="codeblock-wrapper"><doc-codeblock line-numbers>
-<pre class="language-yaml"><code v-pre class="language-yaml">serverTime: 165000123000</code></pre>
+<pre class="language-yaml"><code v-pre class="language-yaml">server_time: 165000123000</code></pre>
 </doc-codeblock></div>
 </doc-tab>
 <doc-tab id="toml">
 <template #title>TOML</template>
 <div class="codeblock-wrapper"><doc-codeblock line-numbers>
-<pre class="language-toml"><code v-pre class="language-toml">serverTime = 165000123000.0</code></pre>
+<pre class="language-toml"><code v-pre class="language-toml">server_time = 165000123000.0</code></pre>
 </doc-codeblock></div>
 </doc-tab>
 </doc-tabs>
