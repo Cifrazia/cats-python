@@ -26,9 +26,9 @@
     <script>(function () { var el = document.documentElement, m = localStorage.getItem("/cats-python/doc_theme"), wm = window.matchMedia; if (m === "dark" || (!m && wm && wm("(prefers-color-scheme: dark)").matches)) { el.classList.add("dark") } else { el.classList.remove("dark") } })();</script>
 
     <link href="/cats-python/img/favicon.png" rel="icon" />
-    <link href="/cats-python/resources/css/retype.css?v=1.9.684052888484" rel="stylesheet" data-turbo-track="reload" />
+    <link href="/cats-python/resources/css/retype.css?v=1.9.684140587282" rel="stylesheet" data-turbo-track="reload" />
 
-    <script type="text/javascript" src="/cats-python/resources/js/config.js?v=1.9.684052888484" defer data-turbo-track="reload"></script>
+    <script type="text/javascript" src="/cats-python/resources/js/config.js?v=1.9.684140587282" defer data-turbo-track="reload"></script>
     <script type="text/javascript" src="/cats-python/resources/js/retype.js?v=1.9" defer data-turbo-track="reload"></script>
 </head>
     <body>
@@ -224,12 +224,27 @@ to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
 <ul class="contains-task-list">
 <li class="task-list-item"><input disabled="disabled" type="checkbox" /> Added different scheme language support: YAML, TOML</li>
 </ul>
-<doc-anchor-target id="420-">
+<doc-anchor-target id="421-">
     <h2>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#420-">#</doc-anchor-trigger>
-        <span><code v-pre>4.2.0</code> <span class="no-link inline-flex items-center justify-center font-medium leading-none whitespace-nowrap text-blue-500 dark:text-blue-400 border border-blue-500 dark:border-blue-400 h-6 px-2 text-xs rounded-md">
+        <doc-anchor-trigger class="header-anchor-trigger" to="#421-">#</doc-anchor-trigger>
+        <span><code v-pre>4.2.1</code> <span class="no-link inline-flex items-center justify-center font-medium leading-none whitespace-nowrap text-blue-500 dark:text-blue-400 border border-blue-500 dark:border-blue-400 h-6 px-2 text-xs rounded-md">
             <span>LATEST</span>
         </span></span>
+    </h2>
+</doc-anchor-target>
+<p>Released: 2021-09-05</p>
+<ul class="contains-task-list">
+<li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> Added <code v-pre>test_utils</code> module:
+<ul class="contains-task-list">
+<li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> Added <code v-pre>client.Connection</code> test class with broadcast inbox</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> Added <code v-pre>pytest</code> plugin</li>
+</ul>
+</li>
+</ul>
+<doc-anchor-target id="420">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#420">#</doc-anchor-trigger>
+        <span><code v-pre>4.2.0</code></span>
     </h2>
 </doc-anchor-target>
 <p>Released: 2021-09-04</p>
@@ -691,11 +706,11 @@ of dict</li>
 
 <nav class="flex mt-14">
     <div class="w-1/2">
-        <a class="px-5 py-4 h-full flex items-center break-all md:break-normal font-medium text-blue-500 dark:text-blue-400 border border-gray-300 hover:border-gray-400 dark:border-dark-650 dark:hover:border-dark-450 rounded-r rounded-l-lg transition-colors duration-150 relative hover:z-5" href="/cats-python/how-does-it-work/">
+        <a class="px-5 py-4 h-full flex items-center break-all md:break-normal font-medium text-blue-500 dark:text-blue-400 border border-gray-300 hover:border-gray-400 dark:border-dark-650 dark:hover:border-dark-450 rounded-r rounded-l-lg transition-colors duration-150 relative hover:z-5" href="/cats-python/testing/pytest/">
             <svg xmlns="http://www.w3.org/2000/svg" class="mr-3" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" overflow="visible"><path d="M19 11H7.41l5.29-5.29a.996.996 0 10-1.41-1.41l-7 7a1 1 0 000 1.42l7 7a1.024 1.024 0 001.42-.01.996.996 0 000-1.41L7.41 13H19c.55 0 1-.45 1-1s-.45-1-1-1z" /><path fill="none" d="M0 0h24v24H0z" /></svg>
             <span>
                 <span class="block text-xs font-normal text-gray-400 dark:text-dark-400">Previous</span>
-                <span class="block mt-1">How does it work</span>
+                <span class="block mt-1">Pytest plugin</span>
             </span>
         </a>
     </div>
