@@ -1,6 +1,6 @@
+import asyncio
 import inspect
 
-from cats import int2hex
 from cats.v2 import Config
 from cats.v2.action import Action
 from cats.v2.client import Connection as BaseConn
@@ -33,10 +33,18 @@ class Connection(BaseConn):
     def clear_broadcast_inbox(self):
         self.broadcast_inbox.clear()
 
-    def get_received_broadcast(self, handler_id: int) -> None:
-        received = False
-        for action in self.broadcast_inbox:
+    def get_received_broadcast(self, handler_id: int) -> (int | None, Action | None):
+        for i, action in enumerate(self.broadcast_inbox):
             if action.handler_id == handler_id:
-                received = True
-                break
-        assert received, f'No broadcast for {int2hex(handler_id)} received'
+                return i, action
+        return None, None
+
+    async def recv_broadcast(self, handler_id: int) -> Action | None:
+        i, action = self.get_received_broadcast(handler_id)
+        if action is not None:
+            if not self.store_handled_broadcast:
+                self.broadcast_inbox.pop(i)
+            return action
+        fut = asyncio.Future()
+        self.subscribe(handler_id, lambda res: fut.set_result(res))
+        return await asyncio.wait_for(fut, 5.0)
