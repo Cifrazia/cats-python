@@ -1,33 +1,16 @@
 from typing import Type, TypeVar
 
 __all__ = [
-    'IdentityMeta',
     'IdentityObject',
     'Identity',
 ]
 
-
-class IdentityMeta(type):
-    __identity_registry__: list[Type['Identity']] = []
-
-    def __new__(mcs, name, bases, attrs):
-        cls = super().__new__(mcs, name, bases, attrs)
-        # noinspection PyTypeChecker
-        IdentityMeta.__identity_registry__.append(cls)
-        return cls
-
-    @property
-    def identity_list(cls):
-        return IdentityMeta.__identity_registry__[:]
-
-
 IdentityObject = TypeVar('IdentityObject', bound='Identity')
 
 
-class Identity(metaclass=IdentityMeta):
+class Identity:
     __slots__ = ()
-    id: int
-    model_name: str
+    identity_list: list[Type['Identity']] = []
 
     @property
     def sentry_scope(self) -> dict:
@@ -35,3 +18,6 @@ class Identity(metaclass=IdentityMeta):
         Must return dict of data that can be used by Sentry
         """
         raise NotImplementedError
+
+    def __init_subclass__(cls):
+        cls.identity_list.append(cls)

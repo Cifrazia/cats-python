@@ -13,7 +13,15 @@ Released: 2021-09-20
 
 - [ ] Added different scheme language support: YAML, TOML
 
-## `4.3.0` [!badge variant="info" text="LATEST"]
+## `4.3.1` [!badge variant="info" text="LATEST"]
+
+Released: 2021-09-06
+
+### Fixed
+
+- [x] Fixed `Identity` ABC class interfered with `django.db.models.Model` metaclass
+
+## `4.3.0`
 
 Released: 2021-09-05
 
