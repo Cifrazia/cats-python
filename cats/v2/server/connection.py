@@ -9,10 +9,11 @@ import sentry_sdk
 from tornado.iostream import IOStream
 
 from cats.errors import ProtocolError
-from cats.identity import Identity
+from cats.identity import Identity, IdentityObject
 from cats.types import BytesAnyGen
 from cats.utils import as_uint
 from cats.v2.action import *
+from cats.v2.auth import AuthError
 from cats.v2.config import Config
 from cats.v2.connection import Connection as BaseConnection
 from cats.v2.server.application import Application
@@ -156,7 +157,16 @@ class Connection(BaseConnection):
     def conns_with_same_model(self) -> Iterable['Connection']:
         return self.app.channel(f'model_{self._identity.model_name}')
 
-    def sign_in(self, identity: Identity, credentials=None):
+    async def sign_in(self, silent: bool = False, **kwargs) -> IdentityObject | None:
+        try:
+            identity, credentials = await self._app.auth.sign_in(**kwargs)
+            self.set_identity(identity, credentials=credentials)
+            return identity
+        except AuthError:
+            if not silent:
+                raise
+
+    def set_identity(self, identity: Identity, credentials=None):
         self._identity: Identity | None = identity
         self._credentials = credentials
 

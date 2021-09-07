@@ -13,7 +13,15 @@ Released: 2021-09-20
 
 - [ ] Added different scheme language support: YAML, TOML
 
-## `4.3.1` [!badge variant="info" text="LATEST"]
+## `4.3.2` [!badge variant="info" text="LATEST"]
+
+Released: 2021-09-07
+
+### Added
+
+-[x] Added auth module
+
+## `4.3.1`
 
 Released: 2021-09-06
 

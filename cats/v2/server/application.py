@@ -3,6 +3,7 @@ from functools import partial
 from typing import Awaitable, Iterable, Type
 
 from cats.v2.action import ActionLike
+from cats.v2.auth import Auth
 from cats.v2.config import Config
 from cats.v2.connection import Connection
 from cats.v2.server.handlers import Api, Handler, HandlerItem
@@ -14,11 +15,12 @@ __all__ = [
 
 
 class Application:
-    __slots__ = ('config', 'ConnectionClass', '_handlers', '_channels', '_runner')
+    __slots__ = ('config', 'auth', 'ConnectionClass', '_handlers', '_channels', '_runner')
 
-    def __init__(self, apis: list[Api], middleware: list[Middleware] = None, *, config: Config = None,
-                 connection: Type[Connection] = None):
+    def __init__(self, apis: list[Api], middleware: list[Middleware] = None, *,
+                 auth: Auth = None, config: Config = None, connection: Type[Connection] = None):
         self.config = Config() if config is None else config
+        self.auth = Auth([]) if auth is None else auth
         self.ConnectionClass = connection
         if middleware is None:
             middleware = [

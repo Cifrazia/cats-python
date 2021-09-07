@@ -167,7 +167,7 @@ class Connection(BaseConnection):
         self._recv_pool[message_id] = future
         return await future
 
-    def sign_in(self, identity: Identity, credentials=None):
+    def set_identity(self, identity: Identity, credentials=None):
         self._identity: Identity | None = identity
         self._credentials = credentials
 

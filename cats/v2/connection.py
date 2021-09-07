@@ -243,7 +243,7 @@ class Connection:
     def signed_in(self) -> bool:
         return self._identity is not None
 
-    def sign_in(self, identity: Identity, credentials=None):
+    def set_identity(self, identity: Identity, credentials=None):
         """
         Mark connection as Signed In with identity [and credentials used]
         :param identity:
