@@ -124,8 +124,12 @@ class Handler:
         assert not (cls.require_auth is False and cls.require_models is not None), \
             f'{cls!s}.require_auth is False and {cls!s}.require_models is not None'
 
-        api.register(HandlerItem(id, name, cls, version, end_version))
+        api.register(HandlerItem(id, name, cls, version, end_version))  # noqa, pycharm bug
         cls.handler_id = id
+
+    @property
+    def conn(self):
+        return self.action.conn
 
     async def __call__(self) -> ActionLike | None:
         st = time()
