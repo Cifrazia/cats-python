@@ -5,11 +5,13 @@ from pytest import PytestWarning, fixture, mark
 
 from cats.test_utils.client import Connection
 from cats.v2 import Config, Handshake
+from cats.v2.auth import Auth
 from cats.v2.server import Api, Application, Connection as ServerConnection, Middleware, Server, default_error_handler
 
 __all__ = [
     'cats_handshake',
     'cats_apis',
+    'cats_auth',
     'cats_middleware',
     'cats_config',
     'cats_server_connection',
@@ -28,6 +30,11 @@ def cats_handshake() -> Handshake:
 @fixture(scope='session')
 def cats_apis() -> list[Api]:
     raise NotImplementedError('Please, overwrite "cats_apis" fixture in order for CATS tests to work')
+
+
+@fixture(scope='session')
+def cats_auth() -> Auth | None:
+    raise NotImplementedError('Please, overwrite "cats_auth" fixture in order for CATS tests to work')
 
 
 @fixture(scope='session')
@@ -60,10 +67,11 @@ def cats_server_connection() -> Type[ServerConnection] | None:
 
 
 @fixture(scope='session')
-def cats_app(cats_apis, cats_middleware, cats_config, cats_server_connection):
+def cats_app(cats_apis, cats_middleware, cats_config, cats_auth, cats_server_connection):
     return Application(
         apis=cats_apis,
         middleware=cats_middleware,
+        auth=cats_auth,
         config=cats_config,
         connection=cats_server_connection,
     )
