@@ -42,7 +42,7 @@ class Auth:
                 return await method.sign_in(**kwargs)
             except (KeyboardInterrupt, asyncio.CancelledError, asyncio.TimeoutError):
                 raise
-            except (AuthError, TypeError):
+            except TypeError:
                 pass
         raise AuthError('Unable to authenticate')
 
