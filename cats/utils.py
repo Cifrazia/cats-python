@@ -90,10 +90,10 @@ def require(dotted_path: str, /, *, strict: bool = True):
             return getattr(module, class_name)
         except AttributeError as err:
             raise ImportError(f'Module "{module_path}" does not define a "{class_name}" attribute/class') from err
-    except ImportError as err:
+    except ImportError:
         logging.error(f'Failed to import {dotted_path}')
         if strict:
-            raise err
+            raise
         return None
 
 

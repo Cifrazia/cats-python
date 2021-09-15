@@ -2,6 +2,7 @@ from typing import Type, TypeAlias, TypeVar
 
 import ujson
 
+from cats.errors import UnsupportedSchemeError
 from cats.types import Json, Missing, Model, QuerySet
 
 try:
@@ -158,7 +159,7 @@ def _resolve_scheme_type(scheme: Scheme) -> Type[DRF] | Type[Djantic] | Type[Pyd
     elif issubclass(scheme, BaseModel):
         return Pydantic
     else:
-        raise TypeError('Unsupported scheme')
+        raise UnsupportedSchemeError('Unsupported scheme', scheme=scheme)
 
 
 def scheme_load(scheme: Scheme, data: Json, *, many: bool = False, plain: bool = False) -> Json | Form:

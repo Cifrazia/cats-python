@@ -8,7 +8,7 @@ from typing import NamedTuple, Type, TypeAlias, TypeVar
 import math
 import struct_model
 
-from cats.errors import MalformedDataError, ProtocolError
+from cats.errors import CatsUsageError, MalformedDataError, ProtocolError
 from cats.types import Bytes, Headers
 from cats.utils import Delay, as_uint, bytes2hex, filter_json, format_amount, int2hex, tmp_file, to_uint
 from cats.v2.codecs import Codec, T_FILE, T_JSON
@@ -78,7 +78,7 @@ class BaseAction(dict):
         assert type(self) is not BaseAction, 'Creation of BaseAction instances are prohibited'
 
         if headers is not None and not isinstance(headers, dict):
-            raise MalformedDataError('Invalid Headers provided')
+            raise MalformedDataError('Invalid Headers provided', data=data, headers=headers)
 
         self.data = data
         self.headers = Headers(headers or {})
@@ -102,7 +102,7 @@ class BaseAction(dict):
         if value is None:
             value = 200
         elif not isinstance(value, int):
-            raise MalformedDataError('Invalid status type')
+            raise TypeError('Invalid status type')
         self.headers['Status'] = value
 
     @status.deleter
@@ -118,7 +118,7 @@ class BaseAction(dict):
         if value is None:
             value = 0
         elif not isinstance(value, int):
-            raise MalformedDataError('Invalid offset type')
+            raise TypeError('Invalid offset type')
         self.headers['Offset'] = value
 
     @offset.deleter
@@ -134,7 +134,7 @@ class BaseAction(dict):
                   bypass_limit=False, bypass_count=False,
                   timeout=None):
         if not self.conn:
-            raise ValueError('Connection is not set')
+            raise CatsUsageError('Connection is not set')
         fut = asyncio.Future()
         timeout = self.conn.conf.input_timeout if timeout is None else timeout
 
@@ -146,7 +146,7 @@ class BaseAction(dict):
 
         inp = Input(fut, self.conn, self.message_id, bypass_count, timeout)
         if self.message_id in self.conn.input_pool:
-            raise ProtocolError(f'Input query with MID {self.message_id} already exists')
+            raise ProtocolError(f'Input query with MID {self.message_id} already exists', conn=self.conn)
 
         self.conn.input_pool[self.message_id] = inp
         action = InputAction(data, headers=headers, status=status, message_id=self.message_id,
@@ -202,7 +202,7 @@ class BasicAction(BaseAction, abstract=True):
         if self.data_len > MAX_IN_MEMORY:
             if self.data_type != T_FILE:
                 raise ProtocolError(f'Attempted to send message larger than '
-                                    f'{format_amount(MAX_IN_MEMORY)}')
+                                    f'{format_amount(MAX_IN_MEMORY)}', conn=self.conn)
             await self._recv_large_data()
         else:
             await self._recv_small_data()
@@ -434,7 +434,7 @@ class StreamAction(Action):
             if data_len > self.conn.conf.max_plain_payload:
                 if self.data_type != T_FILE:
                     raise ProtocolError(f'Attempted to send message larger than '
-                                        f'{format_amount(self.conn.conf.max_plain_payload)}')
+                                        f'{format_amount(self.conn.conf.max_plain_payload)}', conn=self.conn)
                 decode = buff
             elif self.data_type != T_FILE:
                 with buff.open('rb') as _fh:
@@ -483,7 +483,8 @@ class StreamAction(Action):
         data = self.data
         compression = self.compression
         if compression is None:
-            compression = await Compressor.propose_compression(PROPOSAL_PLACEHOLDER, conn.default_compressor)
+            compression = await Compressor.propose_compression(PROPOSAL_PLACEHOLDER, self.headers,
+                                                               conn.default_compressor)
 
         assert hasattr(data, '__iter__') or hasattr(data, '__aiter__'), \
             'StreamResponse payload is not (Async)Generator[Bytes, None, None]'
@@ -525,14 +526,14 @@ class StreamAction(Action):
             if not chunk:
                 continue
             if not isinstance(chunk, Bytes):
-                raise MalformedDataError('Provided data chunk is not binary')
+                raise MalformedDataError('Provided data chunk is not binary', data=data, headers=self.headers)
 
             chunk, _ = await Compressor.compress(chunk, self.headers,
                                                  conn.allowed_compressors, conn.default_compressor,
                                                  compression)
             chunk_size = len(chunk)
             if chunk_size >= 1 << 32:
-                raise ProtocolError('Provided data chunk exceeded max chunk size')
+                raise MalformedDataError('Provided data chunk exceeded max chunk size', data=data, headers=self.headers)
 
             await delay(chunk_size + 4)
             await conn.write(to_uint(chunk_size, 4))

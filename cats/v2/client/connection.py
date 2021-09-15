@@ -76,7 +76,8 @@ class Connection(BaseConnection):
         await self.write(to_uint(self.PROTOCOL_VERSION, 4))
         result = await self.read(4)
         if result != bytes(4):
-            raise ProtocolError(f'Unsupported protocol version. Please upgrade your client to: {as_uint(result)}')
+            raise ProtocolError(f'Unsupported protocol version. '
+                                f'Please upgrade your client to: {as_uint(result)}', conn=self)
 
         client_stmt = ClientStatement(
             api=self.api_version,

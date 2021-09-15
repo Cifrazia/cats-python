@@ -4,6 +4,7 @@ from pathlib import Path
 
 import zlib
 
+from cats.errors import ClientSupportError, CompressorError, InvalidCompressorError
 from cats.types import T_Headers
 from cats.utils import as_uint, to_uint
 
@@ -104,9 +105,9 @@ class ZlibCompressor(BaseCompressor):
         buff = zlib.decompress(data)
         checksum = headers.get('Adler32', None)
         if ln != len(buff):
-            raise IOError('Broken data received: Length mismatch')
+            raise CompressorError('Broken data received: Length mismatch', data=data, headers=headers)
         if checksum is not None and zlib.adler32(buff) != checksum:
-            raise IOError('Broken data received: Checksum mismatch')
+            raise CompressorError('Broken data received: Checksum mismatch', data=data, headers=headers)
         return buff
 
     @classmethod
@@ -136,11 +137,11 @@ class ZlibCompressor(BaseCompressor):
                     value = zlib.adler32(buff, value)
                 wc.write(compressor.flush())
         if dst.stat().st_size != ln:
-            raise IOError('Broken data received: Length mismatch')
+            raise CompressorError('Broken data received: Length mismatch', data=src, headers=headers)
         checksum = headers.get('Adler32', None)
         if checksum is not None and value != checksum:
             dst.unlink(missing_ok=True)
-            raise IOError('Broken data received: Checksum mismatch')
+            raise CompressorError('Broken data received: Checksum mismatch', data=src, headers=headers)
 
 
 C_NONE = DummyCompressor.type_id
@@ -165,51 +166,51 @@ class Compressor:
                        compression: int = None) -> (bytes, int):
         try:
             if compression is None:
-                compression = await cls.propose_compression(buff, default)
+                compression = await cls.propose_compression(buff, headers, default)
             if compression not in allowed:
-                raise ValueError(f'Compression unsupported by client: {cls.compressors[compression].type_name}')
+                raise ClientSupportError(f'Compression unsupported by client: {cls.compressors[compression].type_name}')
             buff = await cls.compressors[compression].compress(buff, headers)
             return buff, compression
 
         except (KeyError, ValueError, TypeError) as err:
-            raise ValueError(f'Failed to compress data: {str(err)}')
+            raise CompressorError(f'Failed to compress data: {str(err)}', data=buff, headers=headers) from err
 
     @classmethod
     async def decompress(cls, buff: bytes, headers: T_Headers, compression: int) -> bytes:
         try:
             return await cls.compressors[compression].decompress(buff, headers)
         except (KeyError, ValueError, TypeError) as err:
-            raise ValueError(f'Failed to decompress data: {str(err)}')
+            raise CompressorError(f'Failed to decompress data: {str(err)}', data=buff, headers=headers) from err
 
     @classmethod
     async def compress_file(cls, src: Path, dst: Path, headers: T_Headers, allowed: set[int], default: int,
                             compression: int = None) -> int:
         try:
             if compression is None:
-                compression = await cls.propose_compression(src, default)
+                compression = await cls.propose_compression(src, headers, default)
             if compression not in allowed:
-                raise ValueError(f'Compression unsupported by client: {cls.compressors[compression].type_name}')
+                raise ClientSupportError(f'Compression unsupported by client: {cls.compressors[compression].type_name}')
 
             await cls.compressors[compression].compress_file(src, dst, headers)
             return compression
         except (KeyError, ValueError, TypeError) as err:
-            raise ValueError(f'Failed to compress file: {str(err)}')
+            raise CompressorError(f'Failed to compress file: {str(err)}', data=src, headers=headers)
 
     @classmethod
     async def decompress_file(cls, src: Path, dst: Path, headers: T_Headers, compression: int) -> None:
         try:
             await cls.compressors[compression].decompress_file(src, dst, headers)
         except (KeyError, ValueError, TypeError) as err:
-            raise ValueError(f'Failed to decompress file: {str(err)}')
+            raise CompressorError(f'Failed to decompress file: {str(err)}', data=src, headers=headers)
 
     @classmethod
-    async def propose_compression(cls, buff: bytes | Path, default: int):
+    async def propose_compression(cls, buff: bytes | Path, headers: T_Headers, default: int):
         if isinstance(buff, bytes):
             ln = len(buff)
         elif isinstance(buff, Path):
             ln = buff.stat().st_size
         else:
-            raise TypeError('Unsupported buffer type')
+            raise InvalidCompressorError('Unsupported buffer type', data=buff, headers=headers)
         if ln <= 4096:
             return C_NONE
         else:

@@ -4,7 +4,7 @@ from typing import AsyncIterable, Iterable, TypeAlias
 
 import ujson
 
-from cats.errors import ProtocolError
+from cats.errors import MalformedHeadersError
 
 try:
     from django.db.models import QuerySet, Model
@@ -65,7 +65,7 @@ class Headers(dict):
     def __init__(self, *args, **kwargs):
         v = self._convert(*args, **kwargs)
         if (offset := v.get('offset', None)) and (not isinstance(offset, int) or offset < 0):
-            raise ProtocolError('Invalid offset header')
+            raise MalformedHeadersError('Invalid offset header', headers=v)
         super().__init__(v)
 
     @classmethod

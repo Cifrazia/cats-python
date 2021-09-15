@@ -5,15 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project poorly adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## `4.1.0` [!badge variant="info" text="NEXT"]
+## `5.0.0` [!badge variant="info" text="NEXT"]
 
-Released: 2021-09-20
+Expected: Q1 2022
 
 ### Added
 
 - [ ] Added different scheme language support: YAML, TOML
 
-## `4.3.2` [!badge variant="info" text="LATEST"]
+## `4.4.0` [!badge variant="info" text="LATEST"]
+
+Released: 2021-09-15
+
+### Added
+
+- [x] Added test server `python -m cats.v2.server -h`
+- [x] Added test client `python -m cats.v2.client -h`
+- [x] Added `Handler.conn` shortcut for `Handler.action.conn` typed with `server.Connection`
+- [x] Added `Auth` module fixtures to `test_utils`
+
+### Changed
+
+- [x] Exceptions thrown by `cats` internally replaced with subclasses of `CatsError`
+
+### Fixed
+
+- [x] Fixed `StreamClosedError` passed through `Server.handle_stream`
+- [x] Fixed error propagation
+
+## `4.3.2`
 
 Released: 2021-09-07
 

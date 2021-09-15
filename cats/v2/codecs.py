@@ -6,6 +6,7 @@ from typing import IO, TypeAlias
 
 import ujson
 
+from cats.errors import *
 from cats.plugins import BaseModel, BaseSerializer, Form, ModelSchema, scheme_json
 from cats.types import Byte, Json, List, T_Headers
 from cats.utils import tmp_file
@@ -37,9 +38,9 @@ class Files(dict):
         super().__init__(*args, **kwargs)
         for k, v in self.items():
             if not isinstance(k, str):
-                raise ValueError('File key must be string')
+                raise ValidationError('File key must be string', data=self)
             elif not isinstance(v, FileInfo):
-                raise ValueError('File value must be FileInfo')
+                raise ValidationError('File value must be FileInfo', data=self)
 
     def __del__(self):
         for v in self.values():
@@ -74,7 +75,7 @@ class ByteCodec(BaseCodec):
     @classmethod
     async def encode(cls, data: Byte, headers: T_Headers, offset: int = 0) -> bytes:
         if data is not None and not isinstance(data, Byte):
-            raise TypeError(f'{cls.__name__} does not support {type(data).__name__}')
+            raise InvalidCodecError(f'{cls} does not support {type(data)}', data=data, headers=headers)
 
         return (bytes(data) if data else bytes())[offset:]
 
@@ -89,19 +90,22 @@ class JsonCodec(BaseCodec):
 
     @classmethod
     async def encode(cls, data: Json | Form | list[Form], headers: T_Headers, offset: int = 0) -> bytes:
-        if data:
-            if isinstance(data, (BaseModel, BaseSerializer, ModelSchema)):
-                return scheme_json(type(data), data, many=False, plain=True)
-            elif isinstance(data, List):
-                data = list(data)
-                if isinstance(data[0], (BaseModel, BaseSerializer, ModelSchema)):
-                    return scheme_json(type(data[0]), data, many=True, plain=True)
-        return await cls._encode(data, offset=offset)
+        try:
+            if data:
+                if isinstance(data, (BaseModel, BaseSerializer, ModelSchema)):
+                    return scheme_json(type(data), data, many=False, plain=True)
+                elif isinstance(data, List):
+                    data = list(data)
+                    if isinstance(data[0], (BaseModel, BaseSerializer, ModelSchema)):
+                        return scheme_json(type(data[0]), data, many=True, plain=True)
+            return await cls._encode(data, offset=offset)
+        except TypeError as err:
+            raise InvalidCodecError(f'{cls} does not support {type(data)}', data=data, headers=headers) from err
 
     @classmethod
     async def _encode(cls, data: Json, offset: int = 0) -> bytes:
         if not isinstance(data, (str, int, float, dict, list, bool, type(None))):
-            raise TypeError(f'{cls.__name__} does not support {type(data).__name__}')
+            raise TypeError
 
         return ujson.dumps(data, ensure_ascii=False, escape_forward_slashes=False).encode('utf-8')[offset:]
 
@@ -112,8 +116,8 @@ class JsonCodec(BaseCodec):
 
         try:
             return ujson.loads(data.decode('utf-8'))
-        except ValueError:
-            raise ValueError('Failed to parse JSON from data')
+        except ValueError as err:
+            raise CodecError('Failed to parse JSON from data', data=data, headers=headers) from err
 
 
 FILE_TYPES: TypeAlias = Path | list[Path] | dict[str, Path] | FileInfo | list[FileInfo] | dict[str, FileInfo]
@@ -125,10 +129,12 @@ class FileCodec(BaseCodec):
     encoding = 'utf-8'
 
     @classmethod
-    def path_to_file_info(cls, path: Path) -> FileInfo:
-        if not isinstance(path, Path):
-            raise TypeError
-        return FileInfo(path.name, path, getsize(path.as_posix()), None)
+    def path_to_file_info(cls, path: Path | FileInfo) -> FileInfo:
+        if isinstance(path, FileInfo):
+            return path
+        elif isinstance(path, Path):
+            return FileInfo(path.name, path, getsize(path.as_posix()), None)
+        raise TypeError
 
     @classmethod
     def normalize_input(cls, data: FILE_TYPES) -> dict[str, FileInfo]:
@@ -137,16 +143,14 @@ class FileCodec(BaseCodec):
         elif isinstance(data, list):
             res = []
             for i in data:
-                if not isinstance(i, (FileInfo, Path)):
-                    raise TypeError
-                res.append(i if isinstance(i, FileInfo) else cls.path_to_file_info(i))
+                res.append(cls.path_to_file_info(i))
 
         elif isinstance(data, dict):
             res = {}
             for k, v in data.items():
-                if not isinstance(k, str) or not isinstance(v, (FileInfo, Path)):
+                if not isinstance(k, str):
                     raise TypeError
-                res[k] = v if isinstance(v, FileInfo) else cls.path_to_file_info(v)
+                res[k] = cls.path_to_file_info(v)
         elif not isinstance(data, FileInfo):
             raise TypeError
 
@@ -181,9 +185,9 @@ class FileCodec(BaseCodec):
             headers['Files'] = header
             return tmp
 
-        except (KeyError, ValueError, TypeError, AttributeError):
+        except (KeyError, ValueError, TypeError, AttributeError) as err:
             tmp.unlink(missing_ok=True)
-            raise TypeError(f'{cls.__name__} does not support {type(data).__name__}')
+            raise InvalidCodecError(f'{cls} does not support {type(data)}', data=data, headers=headers) from err
 
     @classmethod
     async def decode(cls, data: Path | bytes | bytearray, headers) -> Files:
@@ -192,16 +196,18 @@ class FileCodec(BaseCodec):
 
         try:
             if 'Files' not in headers:
-                raise ValueError('Failed to parse Files meta data from headers')
+                raise MalformedDataError('Failed to parse Files meta data from headers', data=data, headers=headers)
 
             header = headers['Files']
 
             if not isinstance(header, list):
-                raise ValueError
+                raise MalformedDataError(f'Files headers must be list, {type(header)} provided',
+                                         data=data, headers=headers)
 
-            for node in header:
+            for i, node in enumerate(header):
                 if not isinstance(node, dict):
-                    raise ValueError
+                    raise MalformedDataError(f'Files header item[{i}] must be dict, {type(node)} provided',
+                                             data=data, headers=headers)
 
                 tmp = await cls._unpack_file(buff, node)
                 result[node['key']] = FileInfo(
@@ -212,10 +218,10 @@ class FileCodec(BaseCodec):
                 )
 
             return result
-        except (KeyError, ValueError, TypeError):
+        except (KeyError, ValueError, TypeError) as err:
             for v in result.values():
                 v.path.unlink(missing_ok=True)
-            raise ValueError('Failed to parse Files form data')
+            raise CodecError('Failed to parse Files from data', data=data, headers=headers) from err
         finally:
             buff.close()
 
@@ -227,7 +233,7 @@ class FileCodec(BaseCodec):
             while left > 0:
                 buff = fh.read(min(left, 1 << 24))
                 if not len(buff):
-                    raise ValueError
+                    raise ValueError('Failed to unpack file: payload size exceeded')
                 node_fh.write(buff)
                 left -= len(buff)
         return tmp
@@ -254,10 +260,10 @@ class Codec:
             try:
                 encoded = await codec.encode(buff, headers, offset)
                 return encoded, type_id
-            except TypeError:
+            except InvalidCodecError:
                 continue
 
-        raise TypeError(f'Failed to encode data: Type {type(buff).__name__} not supported')
+        raise CodecError(f'Failed to encode data: Type {type(buff)} not supported', data=buff, headers=headers)
 
     @classmethod
     async def decode(cls, buff: Byte | Path, data_type: int, headers: T_Headers) -> Byte | Json | Files:
@@ -265,7 +271,7 @@ class Codec:
         Takes byte buffer, type_id and try to decode it to internal data types
         """
         if data_type not in cls.codecs:
-            raise TypeError(f'Failed to decode data: Type {data_type} not supported')
+            raise CodecError(f'Failed to decode data: Type {data_type} not supported', data=buff, headers=headers)
 
         return await cls.codecs[data_type].decode(buff, headers)
 

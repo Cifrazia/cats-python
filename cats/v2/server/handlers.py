@@ -6,6 +6,7 @@ from random import random
 from time import time
 from typing import Awaitable, Type
 
+from cats.errors import ActionError
 from cats.identity import Identity, IdentityObject
 from cats.plugins import Form, Scheme, SchemeTypes, scheme_json, scheme_load
 from cats.types import Json, List, T_Headers
@@ -212,7 +213,7 @@ class Handler:
         if isinstance(types, int):
             types = (types,)
         if self.action.data_type not in types:
-            raise ValueError('Received payload type is not acceptable')
+            raise ActionError('Received payload type is not acceptable', action=self.action)
 
     def _check_data_len(self):
         if (x := self.action.data_len) is None:
@@ -220,35 +221,30 @@ class Handler:
         min_len = self.min_data_len
         max_len = self.max_data_len
         if min_len is not None and x < min_len:
-            raise ValueError(f'Received payload data size is less than allowed [{min_len}]')
+            raise ActionError(f'Received payload data size is less than allowed [{min_len}]', action=self.action)
         if max_len is not None and max_len < x:
-            raise ValueError(f'Received payload data size is more than allowed [{max_len}]')
+            raise ActionError(f'Received payload data size is more than allowed [{max_len}]', action=self.action)
 
     def _check_models(self):
         model = self.identity.model_name if self.identity else None
         if self.block_models is not None and model in self.block_models:
-            raise ValueError(f'Model {model} is forbidden')
+            raise ActionError(f'Model {model} is forbidden', action=self.action)
         if self.require_models is not None and model not in self.require_models:
-            raise ValueError(f'Model {model} is required')
+            raise ActionError(f'Model {model} is required', action=self.action)
 
     def _check_auth(self):
         if self.require_auth is None:
             return
         if self.require_auth ^ self.action.conn.signed_in():
             reason = 'required' if self.require_auth else 'forbidden'
-            raise ValueError(f'Authentication is {reason}')
+            raise ActionError(f'Authentication is {reason}', action=self.action)
 
     def _check_file_size(self):
         if self.action.data_type != T_FILE:
             return
-        for file in self.action.headers.get('Files', []):
+        for i, file in enumerate(self.action.headers.get('Files', [])):
             x = int(file['size'])
-            min_size = self.min_file_size
-            max_size = self.max_file_size
-            if min_size is not None and x < min_size:
-                raise ValueError(f'Received File[n].size is less than allowed [{min_size}]')
-            if max_size is not None and max_size < x:
-                raise ValueError(f'Received File[n].size is more than allowed [{max_size}]')
+            self._check_min_max(x, self.min_file_size, self.max_file_size, f'File[{i}].size')
 
     def _check_file_total_size(self):
         if self.action.data_type != T_FILE:
@@ -259,21 +255,17 @@ class Handler:
         else:
             x = sum(file['size'] for file in self.action.headers.get('Files', []))
 
-        min_size = self.min_file_total_size
-        max_size = self.max_file_total_size
-        if min_size is not None and x < min_size:
-            raise ValueError(f'Received ∑ File[n].size is less than allowed [{min_size}]')
-        if max_size is not None and max_size < x:
-            raise ValueError(f'Received ∑ File[n].size is more than allowed [{max_size}]')
+        self._check_min_max(x, self.min_file_total_size, self.max_file_total_size, '∑ File[n].size')
 
     def _check_file_amount(self):
         if self.action.data_type != T_FILE:
             return
 
-        min_len = self.min_file_amount
-        max_len = self.max_file_amount
         x = len(self.action.headers.get('Files', []))
-        if min_len is not None and x < min_len:
-            raise ValueError(f'Received File amount is less than allowed [{min_len}]')
-        if max_len is not None and max_len < x:
-            raise ValueError(f'Received File amount is more than allowed [{max_len}]')
+        self._check_min_max(x, self.min_file_amount, self.max_file_amount, 'File amount')
+
+    def _check_min_max(self, size: int, min_size: int | None, max_size: int | None, part: str) -> None:
+        if min_size is not None and size < min_size:
+            raise ActionError(f'Received {part} is less than allowed [{min_size}]', action=self.action)
+        if max_size is not None and max_size < size:
+            raise ActionError(f'Received {part} is more than allowed [{max_size}]', action=self.action)

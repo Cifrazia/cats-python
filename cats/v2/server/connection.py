@@ -79,7 +79,7 @@ class Connection(BaseConnection):
             if action.message_id in self.input_pool:
                 self.input_pool[action.message_id].done(action)
             else:
-                raise ProtocolError('Received answer but input does`t exists')
+                raise ProtocolError('Received answer but input does`t exists', conn=self)
         elif isinstance(action, CancelInputAction):
             if action.message_id in self.input_pool:
                 self.input_pool[action.message_id].cancel()
@@ -89,7 +89,7 @@ class Connection(BaseConnection):
             if not limit or (1024 <= limit <= 33_554_432):
                 self.download_speed = limit
             else:
-                raise ProtocolError('Unsupported download speed limit')
+                raise ProtocolError('Unsupported download speed limit', conn=self)
             await action.dump_data(0)
         elif isinstance(action, PingAction):
             self.debug(f'Ping {action.send_time} [-] {action.recv_time}')
@@ -102,7 +102,7 @@ class Connection(BaseConnection):
                     result = await self.app.run(handler(action))
                     if result is not None:
                         if not isinstance(result, Action):
-                            raise ProtocolError('Returned invalid response')
+                            raise ProtocolError('Returned invalid response', conn=self)
 
                         result.handler_id = action.handler_id
                         result.message_id = action.message_id
@@ -126,7 +126,7 @@ class Connection(BaseConnection):
                 if item.version <= self.api_version <= end_version:
                     return item.handler
 
-        raise ProtocolError(f'Handler with id {handler_id} not found')
+        raise ProtocolError(f'Handler with id {handler_id} not found', conn=self)
 
     async def send(self, handler_id: int, data=None, message_id=None, compression=None, *,
                    headers=None, status=None):

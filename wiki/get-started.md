@@ -22,6 +22,14 @@ pip install cats-python[pydantic]
 
 ## First steps
 
+### CATS Server
+
+Write your first server
+
+```shell test server
+python -m cats.v2.server -h
+```
+
 ```python server.py
 from tornado.ioloop import IOLoop
 
@@ -55,6 +63,14 @@ def main():
 if __name__ == '__main__':
     main()
 
+```
+
+### CATS client
+
+Write your first client
+
+```shell test client
+python -m cats.v2.client -h
 ```
 
 ```python client.py

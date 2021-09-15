@@ -58,18 +58,19 @@ class SHA256TimeHandshake(Handshake):
             if handshake not in self.get_hashes(time()):
                 await conn.write(b'\x00')
                 conn.debug(f'[SEND {conn.address} Handshake failed')
-                raise HandshakeError('Invalid handshake')
-        except UnicodeDecodeError:
+                raise HandshakeError('Invalid handshake', conn=conn, handshake=handshake)
+        except UnicodeDecodeError as err:
             await conn.write(b'\x00')
-            raise HandshakeError('Malformed handshake')
+            raise HandshakeError('Malformed handshake', conn=conn, handshake=handshake) from err
         else:
             await conn.write(b'\x01')
             conn.debug(f'[SEND {conn.address}] Handshake passed')
 
     async def send(self, conn) -> None:
-        await conn.write(self.get_hashes(conn.time_delta + time())[1])
+        handshake = self.get_hashes(conn.time_delta + time())[1]
+        await conn.write(handshake)
         result = await conn.read(1)
         if result == b'\x01':
             conn.debug(f'[SEND {conn.address}] Handshake passed')
             return
-        raise HandshakeError('Invalid handshake')
+        raise HandshakeError('Invalid handshake', conn=conn, handshake=handshake)

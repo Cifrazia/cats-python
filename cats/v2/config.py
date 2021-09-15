@@ -4,7 +4,7 @@ from typing import Type
 
 from tornado.iostream import StreamClosedError
 
-from cats.errors import HandshakeError, ProtocolError
+from cats.errors import CatsError
 from cats.v2.handshake import Handshake
 
 __all__ = [
@@ -27,8 +27,7 @@ class Config:
     )
     ignore_errors: Type[Exception] | tuple[Type[Exception]] = (
         *stream_errors,
-        HandshakeError,
-        ProtocolError,
+        CatsError,
         KeyboardInterrupt,
     )
     handshake: Handshake | None = None

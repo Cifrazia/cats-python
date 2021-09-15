@@ -9,7 +9,7 @@ from tornado.iostream import IOStream
 from tornado.tcpserver import TCPServer
 from tornado.testing import bind_unused_port
 
-from cats.errors import ProtocolError
+from cats.errors import CatsError
 from cats.utils import as_uint, to_uint
 from cats.v2.connection import ConnType, Connection
 from cats.v2.server.application import Application
@@ -57,15 +57,19 @@ class Server(TCPServer):
         ))
 
     async def handle_stream(self, stream: IOStream, address: tuple[str, int]) -> None:
-        protocol_version = as_uint(await stream.read_bytes(4))
-        if not self.protocols[0] <= protocol_version <= self.protocols[1]:
-            await stream.write(to_uint(self.protocols[1], 4))
-            stream.close(ProtocolError('Unsupported protocol version'))
-            return
-        await stream.write(bytes(4))
-        async with self.create_connection(stream, address, protocol_version) as conn:
-            conn.debug(f'[INIT {address}]')
-            await conn.start()
+        try:
+            protocol_version = as_uint(await stream.read_bytes(4))
+            if not self.protocols[0] <= protocol_version <= self.protocols[1]:
+                await stream.write(to_uint(self.protocols[1], 4))
+                stream.close(CatsError('Unsupported protocol version'))
+                return
+            await stream.write(bytes(4))
+            async with self.create_connection(stream, address, protocol_version) as conn:
+                conn.debug(f'[INIT {address}]')
+                await conn.start()
+            conn.debug(f'[STOP {address}]')
+        except self.app.config.stream_errors:
+            pass
 
     @asynccontextmanager
     async def create_connection(self, stream: IOStream, address: tuple[str, int], protocol: int) -> ConnType:

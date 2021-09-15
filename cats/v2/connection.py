@@ -133,7 +133,7 @@ class Connection:
         action_type_id = await self.read(1)
         action_class = BaseAction.get_class_by_type_id(action_type_id)
         if action_class is None:
-            raise ProtocolError(f'Received unknown Action Type ID [{action_type_id.hex()}]')
+            raise ProtocolError(f'Received unknown Action Type ID [{action_type_id.hex()}]', conn=self)
 
         try:
             await self.handle(await action_class.init(self))
