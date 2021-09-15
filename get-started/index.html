@@ -26,11 +26,11 @@
     <script>(function () { var el = document.documentElement, m = localStorage.getItem("/cats-python/doc_theme"), wm = window.matchMedia; if (m === "dark" || (!m && wm && wm("(prefers-color-scheme: dark)").matches)) { el.classList.add("dark") } else { el.classList.remove("dark") } })();</script>
 
     <link href="/cats-python/img/favicon.png" rel="icon" />
-    <link href="/cats-python/resources/css/retype.css?v=1.9.684944436374" rel="stylesheet" data-turbo-track="reload" />
+    <link href="/cats-python/resources/css/retype.css?v=1.9.685032179501" rel="stylesheet" data-turbo-track="reload" />
 
-    <script type="text/javascript" src="/cats-python/resources/js/config.js?v=1.9.684944436374" defer data-turbo-track="reload"></script>
+    <script type="text/javascript" src="/cats-python/resources/js/config.js?v=1.9.685032179501" defer data-turbo-track="reload"></script>
     <script type="text/javascript" src="/cats-python/resources/js/retype.js?v=1.9" defer data-turbo-track="reload"></script>
-    <script id="prism-js" type="text/javascript" src="/cats-python/resources/js/prism.js?v=1.9.684944436374" defer></script>
+    <script id="prism-js" type="text/javascript" src="/cats-python/resources/js/prism.js?v=1.9.685032179501" defer></script>
 </head>
     <body>
         <div id="docs-app" class="relative text-base antialiased text-gray-700 bg-white font-body dark:bg-dark-850 dark:text-dark-300">
@@ -235,6 +235,17 @@
         <span>First steps</span>
     </h2>
 </doc-anchor-target>
+<doc-anchor-target id="cats-server">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#cats-server">#</doc-anchor-trigger>
+        <span>CATS Server</span>
+    </h3>
+</doc-anchor-target>
+<p>Write your first server</p>
+<div class="codeblock-wrapper"><doc-codeblock line-numbers>
+<div class="codeblock-title">test server</div>
+<pre class="language-bash"><code v-pre class="language-bash">python -m cats.v2.server -h</code></pre>
+</doc-codeblock></div>
 <div class="codeblock-wrapper"><doc-codeblock line-numbers>
 <div class="codeblock-title">server.py</div>
 <pre class="language-python"><code v-pre class="language-python">from tornado.ioloop import IOLoop
@@ -269,6 +280,17 @@ def main():
 if __name__ == '__main__':
     main()
 </code></pre>
+</doc-codeblock></div>
+<doc-anchor-target id="cats-client">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#cats-client">#</doc-anchor-trigger>
+        <span>CATS client</span>
+    </h3>
+</doc-anchor-target>
+<p>Write your first client</p>
+<div class="codeblock-wrapper"><doc-codeblock line-numbers>
+<div class="codeblock-title">test client</div>
+<pre class="language-bash"><code v-pre class="language-bash">python -m cats.v2.client -h</code></pre>
 </doc-codeblock></div>
 <div class="codeblock-wrapper"><doc-codeblock line-numbers>
 <div class="codeblock-title">client.py</div>
