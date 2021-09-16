@@ -159,8 +159,8 @@ class Connection(BaseConnection):
 
     async def sign_in(self, silent: bool = False, **kwargs) -> IdentityObject | None:
         try:
-            identity, credentials = await self._app.auth.sign_in(**kwargs)
-            self.set_identity(identity, credentials=credentials)
+            identity, credentials, timeout = await self._app.auth.sign_in(**kwargs)
+            self.set_identity(identity, credentials=credentials, timeout=timeout)
             return identity
         except AuthError:
             if not silent:
