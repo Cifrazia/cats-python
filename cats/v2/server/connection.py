@@ -166,41 +166,23 @@ class Connection(BaseConnection):
             if not silent:
                 raise
 
-    def set_identity(self, identity: Identity, credentials=None):
-        self._identity: Identity | None = identity
-        self._credentials = credentials
+    def set_identity(self, identity: Identity, credentials=None, timeout: int | float | None = None):
+        super().set_identity(identity, credentials=credentials, timeout=timeout)
 
         model_group = f'model_{identity.model_name}'
         auth_group = f'{model_group}:{identity.id}'
         self.attach_to_channel(model_group)
         self.attach_to_channel(auth_group)
 
-        self.scope.set_user(self.identity_scope_user)
-        sentry_sdk.add_breadcrumb(message='Sign in', data={
-            'id': identity.id,
-            'model': identity.__class__.__name__,
-            'instance': repr(identity),
-        })
-        self.debug(f'Signed in as {self.identity_scope_user} <{self.host}:{self.port}>')
-
     def sign_out(self):
-        self.debug(f'Signed out from {self.identity_scope_user} <{self.host}:{self.port}>')
-        if self.signed_in():
-            self._sign_out_and_remove_from_channels()
-        self.scope.set_user(self.identity_scope_user)
-        sentry_sdk.add_breadcrumb(message='Sign out')
-
-        return self
-
-    def _sign_out_and_remove_from_channels(self):
+        if not self.signed_in:
+            return
         model_group = f'model_{self.identity.model_name}'
         auth_group = f'{model_group}:{self._identity.id}'
 
         self.detach_from_channel(auth_group)
         self.detach_from_channel(model_group)
-
-        self._identity = None
-        self._credentials = None
+        super().sign_out()
 
     def __str__(self) -> str:
         return f'CATS.Connection: {self.host}:{self.port} api@{self.api_version}'

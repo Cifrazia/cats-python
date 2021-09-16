@@ -6,12 +6,10 @@ from random import randint
 from time import time, time_ns
 from typing import Awaitable, Callable
 
-import sentry_sdk
 from tornado.iostream import IOStream
 from tornado.tcpclient import TCPClient
 
 from cats.errors import ProtocolError
-from cats.identity import Identity
 from cats.types import BytesAnyGen
 from cats.utils import as_uint, to_uint
 from cats.v2.action import Action, ActionLike, BaseAction, PingAction, StreamAction
@@ -167,28 +165,6 @@ class Connection(BaseConnection):
         future = asyncio.Future()
         self._recv_pool[message_id] = future
         return await future
-
-    def set_identity(self, identity: Identity, credentials=None):
-        self._identity: Identity | None = identity
-        self._credentials = credentials
-
-        self.scope.set_user(self.identity_scope_user)
-        sentry_sdk.add_breadcrumb(message='Sign in', data={
-            'id': identity.id,
-            'model': identity.__class__.__name__,
-            'instance': repr(identity),
-        })
-
-        self.debug(f'Signed in as {self.identity_scope_user} <{self.host}:{self.port}>')
-
-    def sign_out(self):
-        self.debug(f'Signed out from {self.identity_scope_user} <{self.host}:{self.port}>')
-        if self.signed_in():
-            self._identity = None
-            self._credentials = None
-        self.scope.set_user(self.identity_scope_user)
-        sentry_sdk.add_breadcrumb(message='Sign out')
-        return self
 
     async def ping(self):
         if not self.conf.idle_timeout:

@@ -13,7 +13,22 @@ Expected: Q1 2022
 
 - [ ] Added different scheme language support: YAML, TOML
 
-## `4.4.1` [!badge variant="info" text="LATEST"]
+## `4.5.0` [!badge variant="info" text="LATEST"]
+
+Released: 2021-09-16
+
+### Added
+
++ Added identity expiration
+
+### Changed
+
++ Auth methods now must
+  return `tuple[identity: Identity, credentials: Any, timeout: int | float | None] | tuple[None, None, None]`
++ Optimized auth method selection
++ If no auth method succeeded, chained error with all trials will be raised
+
+## `4.4.1`
 
 Released: 2021-09-16
 

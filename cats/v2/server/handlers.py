@@ -235,7 +235,7 @@ class Handler:
     def _check_auth(self):
         if self.require_auth is None:
             return
-        if self.require_auth ^ self.action.conn.signed_in():
+        if self.require_auth ^ self.action.conn.signed_in:
             reason = 'required' if self.require_auth else 'forbidden'
             raise ActionError(f'Authentication is {reason}', action=self.action)
 

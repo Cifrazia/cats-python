@@ -45,6 +45,7 @@ class Connection:
         '_closed',
         '_loop',
         '_identity',
+        '_identity_timer',
         '_credentials',
         '_message_pool',
     )
@@ -73,7 +74,8 @@ class Connection:
         self.default_compressor: int = C_NONE
         self._closed: bool = False
         self._loop = asyncio.get_event_loop()
-        self._identity = None
+        self._identity: Identity | None = None
+        self._identity_timer: asyncio.TimerHandle | None = None
         self._credentials = None
         self._message_pool: list[int] = []
 
@@ -235,29 +237,61 @@ class Connection:
 
     @property
     def identity_scope_user(self):
-        if not self.signed_in():
+        if not self.signed_in:
             return {'ip': self.host}
 
         return self.identity.sentry_scope
 
+    @property
     def signed_in(self) -> bool:
         return self._identity is not None
 
-    def set_identity(self, identity: Identity, credentials=None):
+    def set_identity(self, identity: Identity, credentials=None, timeout: int | float | None = None) -> None:
         """
         Mark connection as Signed In with identity [and credentials used]
-        :param identity:
-        :param credentials:
+        :param identity: Identity subclass object
+        :param credentials: anything that was used to get identity, may be JWT, dict, key, etc.
+        :param timeout: How long in seconds should identity be stored. 0 | None for always
         :return:
         """
-        raise NotImplementedError
+        self._identity: Identity | None = identity
+        self._credentials = credentials
 
-    def sign_out(self):
+        self.scope.set_user(self.identity_scope_user)
+        sentry_sdk.add_breadcrumb(message='Sign in', data={
+            'id': identity.id,
+            'model': identity.__class__.__name__,
+            'instance': repr(identity),
+        })
+        self.prolong_identity(timeout)
+
+        self.debug(f'Signed in as {self.identity_scope_user} <{self.host}:{self.port}>')
+
+    def prolong_identity(self, timeout: int | float | None = None) -> None:
+        """
+        Recreates identity removal timer with new timeout. If timeout is None, no timer is created
+        :param timeout:
+        :return: How long in seconds should identity be stored. 0 | None for always
+        """
+        if self._identity_timer is not None:
+            self._identity_timer.cancel()
+            self._identity_timer = None
+        if timeout:
+            self._identity_timer = self._loop.call_later(timeout, self.sign_out)
+
+    def sign_out(self) -> None:
         """
         Mark connection as Signed Out
         :return:
         """
-        raise NotImplementedError
+        if not self.signed_in:
+            return
+        self.prolong_identity(None)
+        self._identity = None
+        self._credentials = None
+        self.scope.set_user(self.identity_scope_user)
+        sentry_sdk.add_breadcrumb(message='Sign out')
+        self.debug(f'Signed out from {self.identity_scope_user} <{self.host}:{self.port}>')
 
     def close(self, exc: BaseException = None) -> None:
         """
