@@ -65,7 +65,9 @@ class Server(TCPServer):
                 return
             await stream.write(bytes(4))
             async with self.create_connection(stream, address, protocol_version) as conn:
+                conn: ServerConnection
                 conn.debug(f'[INIT {address}]')
+                await conn.init()
                 await conn.start()
             conn.debug(f'[STOP {address}]')
         except self.app.config.stream_errors:
