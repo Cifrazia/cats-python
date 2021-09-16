@@ -15,6 +15,14 @@ Expected: Q1 2022
 
 ## `4.4.0` [!badge variant="info" text="LATEST"]
 
+Released: 2021-09-16
+
+### Added
+
+- [x] Added sentry context to auth module
+
+## `4.4.0`
+
 Released: 2021-09-15
 
 ### Added
