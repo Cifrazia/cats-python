@@ -73,7 +73,7 @@ class Connection:
         self.allowed_compressors: set[int] = {C_NONE}
         self.default_compressor: int = C_NONE
         self._closed: bool = False
-        self._loop = asyncio.get_event_loop()
+        self._loop = asyncio.get_running_loop()
         self._identity: Identity | None = None
         self._identity_timer: asyncio.TimerHandle | None = None
         self._credentials = None

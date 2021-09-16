@@ -13,20 +13,36 @@ Expected: Q1 2022
 
 - [ ] Added different scheme language support: YAML, TOML
 
-## `4.5.0` [!badge variant="info" text="LATEST"]
+## `4.5.2` [!badge variant="info" text="LATEST"]
+
+Released: 2021-09-17
+
+### Changed
+
+- [x] Replaced deprecated `asyncio.get_event_loop()` with `asyncio.get_running_loop()`
+
+## `4.5.1`
+
+Released: 2021-09-16
+
+### Fixed
+
+- [x] Fixed `server.connection.sign_in` was broken after `Auth` module update
+
+## `4.5.0`
 
 Released: 2021-09-16
 
 ### Added
 
-+ Added identity expiration
+- [x] Added identity expiration
 
 ### Changed
 
-+ Auth methods now must
+- [x] Auth methods now must
   return `tuple[identity: Identity, credentials: Any, timeout: int | float | None] | tuple[None, None, None]`
-+ Optimized auth method selection
-+ If no auth method succeeded, chained error with all trials will be raised
+- [x] Optimized auth method selection
+- [x] If no auth method succeeded, chained error with all trials will be raised
 
 ## `4.4.1`
 

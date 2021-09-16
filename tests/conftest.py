@@ -17,7 +17,7 @@ def event_loop():
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     else:
         uvloop.install()
-    yield asyncio.get_event_loop_policy().new_event_loop()
+    yield asyncio.new_event_loop()
 
 
 @fixture(scope='session')

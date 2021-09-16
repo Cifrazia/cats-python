@@ -45,7 +45,7 @@ class Input:
         self.message_id: int = message_id
         self.bypass_count: bool = bypass_count
         if timeout:
-            self.timer = asyncio.get_event_loop().call_later(timeout, self.cancel)
+            self.timer = asyncio.get_running_loop().call_later(timeout, self.cancel)
 
     def done(self, result) -> None: ...
 

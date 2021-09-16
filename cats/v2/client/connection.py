@@ -55,7 +55,7 @@ class Connection(BaseConnection):
         client = TCPClient()
         self._stream = await client.connect(host, port, **kwargs)
         self.address = host, port
-        self._listener = asyncio.get_event_loop().create_task(self.start())
+        self._listener = asyncio.get_running_loop().create_task(self.start())
         self._listener.add_done_callback(self.on_tick_done)
         self.debug(f'New connection established: {self.address}')
 
