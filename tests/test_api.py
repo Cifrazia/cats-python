@@ -108,7 +108,7 @@ async def test_api_json_validation(cats_conn: Connection):
 async def test_api_json_invalid(cats_conn: Connection):
     res = await cats_conn.send(JsonFormHandler.handler_id, 'not even a dict')
     assert isinstance(res, Action)
-    assert res.status == 500
+    assert res.status == 400
 
 
 @mark.asyncio

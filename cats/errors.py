@@ -3,6 +3,11 @@ class CatsError(Exception):
     __slots__ = ()
 
 
+class InputCancelled(CatsError):
+    """Raise if received CANCEL action"""
+    __slots__ = ()
+
+
 class ProtocolError(CatsError, ValueError, OSError):
     """Raise if protocol was violated"""
     __slots__ = ('conn',)

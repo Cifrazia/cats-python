@@ -8,7 +8,7 @@ from typing import NamedTuple, Type, TypeAlias, TypeVar
 import math
 import struct_model
 
-from cats.errors import CatsUsageError, MalformedDataError, ProtocolError
+from cats.errors import CatsUsageError, InputCancelled, MalformedDataError, ProtocolError
 from cats.types import Bytes, Headers
 from cats.utils import Delay, as_uint, bytes2hex, filter_json, format_amount, int2hex, tmp_file, to_uint
 from cats.v2.codecs import Codec, T_FILE, T_JSON
@@ -152,7 +152,10 @@ class BaseAction(dict):
         action = InputAction(data, headers=headers, status=status, message_id=self.message_id,
                              data_type=data_type, compression=compression)
         await action.send(self.conn)
-        return await fut
+        try:
+            return await fut
+        except (asyncio.TimeoutError, asyncio.CancelledError) as err:
+            raise InputCancelled from err
 
     @classmethod
     async def init(cls, conn):

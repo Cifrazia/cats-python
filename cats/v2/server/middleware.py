@@ -1,8 +1,8 @@
-import asyncio
 import traceback
 from logging import getLogger
 from typing import Protocol
 
+from richerr import RichErr
 from tornado.iostream import StreamClosedError
 
 from cats.v2.action import Action, ActionLike
@@ -30,19 +30,7 @@ async def default_error_handler(handler: Handler, forward: Forward) -> ActionLik
         return await forward(handler)
     except (KeyboardInterrupt, StreamClosedError):
         raise
-    except asyncio.CancelledError:
-        return Action({
-            'error': 'CancelledError',
-            'message': 'Request was cancelled',
-        }, status=500)
-    except asyncio.TimeoutError:
-        return Action({
-            'error': 'TimeoutError',
-            'message': 'Request timeout',
-        }, status=503)
     except Exception as err:
         logging.debug(traceback.format_exc())
-        return Action({
-            'error': err.__class__.__name__,
-            'message': str(err),
-        }, status=500)
+        err = RichErr.convert(err)
+        return Action(err.dict(), status=err.code)
