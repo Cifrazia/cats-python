@@ -205,7 +205,7 @@ python-versions = "*"
 
 [[package]]
 name = "richerr"
-version = "0.1.0"
+version = "0.1.1"
 description = "Rich errors (sort of)"
 category = "main"
 optional = false
@@ -471,8 +471,8 @@ pytz = [
     { file = "pytz-2021.1.tar.gz", hash = "sha256:83a4a90894bf38e243cf052c8b58f381bfe9a7a483f6a9cab140bc7f702ac4da" },
 ]
 richerr = [
-    { file = "RichErr-0.1.0-py3-none-any.whl", hash = "sha256:612d5283b4a13793ea27a2b0f206442314a1c198918ddb5a060a4ade012917f2" },
-    { file = "RichErr-0.1.0.tar.gz", hash = "sha256:a52a7ddde9ac01fa33ba25b67776fbe1361c3dcb3af9105389b62cef716d7916" },
+    { file = "RichErr-0.1.1-py3-none-any.whl", hash = "sha256:e675a2305c71321e32019ea4d9bf6908c9baa6a526f087ddde49247110178119" },
+    { file = "RichErr-0.1.1.tar.gz", hash = "sha256:297fefa08b6802c59c030d176f2dac26939de21848828e6de927364b1e051113" },
 ]
 sentry-sdk = [
     { file = "sentry-sdk-1.3.1.tar.gz", hash = "sha256:ebe99144fa9618d4b0e7617e7929b75acd905d258c3c779edcd34c0adfffe26c" },

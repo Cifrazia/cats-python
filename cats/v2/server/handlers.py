@@ -125,6 +125,8 @@ class Handler:
         assert not (cls.require_auth is False and cls.require_models is not None), \
             f'{cls!s}.require_auth is False and {cls!s}.require_models is not None'
 
+        if cls.require_auth is None and cls.require_models is not None:
+            cls.require_auth = True
         api.register(HandlerItem(id, name, cls, version, end_version))  # noqa, pycharm bug
         cls.handler_id = id
 
@@ -230,7 +232,7 @@ class Handler:
         if self.block_models is not None and model in self.block_models:
             raise ActionError(f'Model {model} is forbidden', action=self.action)
         if self.require_models is not None and model not in self.require_models:
-            raise ActionError(f'Model {model} is required', action=self.action)
+            raise ActionError(f'Model of {self.require_models} is required, but {model} presented', action=self.action)
 
     def _check_auth(self):
         if self.require_auth is None:

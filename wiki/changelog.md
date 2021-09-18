@@ -13,7 +13,16 @@ Expected: Q1 2022
 
 - [ ] Added different scheme language support: YAML, TOML
 
-## `4.5.4` [!badge variant="info" text="LATEST"]
+## `4.5.5` [!badge variant="info" text="LATEST"]
+
+Released: 2021-09-18
+
+### Fixed
+
+- [x] Fixed `Handler._check_models` broken logging
+- [x] Fixed `Handler._check_auth` wasn't Auth if `require_auth` is None, but `require_models` provided
+
+## `4.5.4`
 
 Released: 2021-09-17
 

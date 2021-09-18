@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cats-python"
-version = "4.5.4"
+version = "4.5.5"
 description = "Cifrazia Action Transport System for Python"
 authors = ["Bogdan Parfenov <adam.brian.bright@gmail.com>"]
 license = "MIT"
@@ -41,7 +41,7 @@ packages = [
 [tool.poetry.dependencies]
 python = ">=3.10.0rc2, <4.0"
 
-richerr = "^0.1.0"
+richerr = "^0.1.1"
 struct-model-python = "^0.1.0"
 
 pytz = "^2021.1"
