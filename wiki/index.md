@@ -1,8 +1,12 @@
 # Welcome
 
+|||
 [![PyPI version](https://badge.fury.io/py/cats-python.svg)](https://badge.fury.io/py/cats-python)
+|||
 [![codecov](https://codecov.io/gh/Cifrazia/cats-python/branch/master/graph/badge.svg?token=MMDPS40REC)](https://codecov.io/gh/Cifrazia/cats-python)
+|||
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FCifrazia%2Fcats-python.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FCifrazia%2Fcats-python?ref=badge_shield)
+|||
 
 ## Cifrazia Action Transport System
 

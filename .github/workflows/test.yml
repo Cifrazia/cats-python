@@ -29,7 +29,6 @@ jobs:
       - name: Test with pytest + generate coverage
         shell: bash
         run: |
-          poetry shell
           poetry run pytest -s -rf -vv --log-level=debug --cov-config=.coveragerc --cov cats tests
       - name: "Upload coverage to Codecov"
         uses: codecov/codecov-action@v2
