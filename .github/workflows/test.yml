@@ -27,6 +27,7 @@ jobs:
           poetry config experimental.new-installer false
           poetry install --no-root -E djantic
       - name: Test with pytest + generate coverage
+        shell: bash
         run: |
           poetry shell
           poetry run pytest -s -rf -vv --log-level=debug --cov-config=.coveragerc --cov cats tests
