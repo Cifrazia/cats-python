@@ -30,13 +30,16 @@ jobs:
         shell: bash
         run: |
           poetry run pytest -s -rf -vv --log-level=debug --cov-config=.coveragerc --cov cats tests
+          poetry run python -m coverage xml -i
+          poetry run python -m coverage html -i
+          poetry run python -m coverage report > coverage.txt
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v2
         with:
           fail_ci_if_error: true
-          token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
+          token: ${{ secrets.CODECOV_TOKEN }}
       - name: Publish to PyPI
         shell: bash
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
         run: |
-          poetry publish -u __token__ -p ${{ secrets.PYPI_API_TOKEN }}
+          poetry publish -u __token__ -p ${{ secrets.PYPI_API_TOKEN }} --build
