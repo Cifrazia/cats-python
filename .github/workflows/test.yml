@@ -27,8 +27,9 @@ jobs:
           poetry config experimental.new-installer false
           poetry install --no-root -E djantic
       - name: Test with pytest + generate coverage
-        run:
-          pytest -s -rf -vv --log-level=debug --cov-config=.coveragerc --cov cats tests
+        run: |
+          poetry shell
+          poetry run pytest -s -rf -vv --log-level=debug --cov-config=.coveragerc --cov cats tests
       - name: "Upload coverage to Codecov"
         uses: codecov/codecov-action@v2
         with:
