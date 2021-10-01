@@ -1,5 +1,8 @@
 # Welcome
 
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FCifrazia%2Fcats-python.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FCifrazia%2Fcats-python?ref=badge_shield)
+[![codecov](https://codecov.io/gh/Cifrazia/cats-python/branch/master/graph/badge.svg?token=MMDPS40REC)](https://codecov.io/gh/Cifrazia/cats-python)
+
 ## Cifrazia Action Transport System
 
 CATS - is a TCP based byte protocol for persistence package exchanging. This so-called protocol is designed specifically
@@ -27,3 +30,5 @@ for internal use in [Cifrazia](https://cifrazia.com).
 + Sentry SDK `^1.1.0`
 + uJSON `^4.0.2`
 + PyTZ `^2021.1`
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FCifrazia%2Fcats-python.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2FCifrazia%2Fcats-python?ref=badge_large)

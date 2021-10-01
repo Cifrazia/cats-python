@@ -1,0 +1,25 @@
+name: GitHub Action for Retype
+on: [ push, pull_request ]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      OS: ubuntu-latest
+      PYTHON: '3.10.0rc2'
+    steps:
+      - uses: checkout@v2
+        with:
+          fetch-depth: ‘2’
+      - name: Setup Python
+        uses: actions/setup-python@master
+        with:
+          python-version: 3.10.0-rc2
+      - name: Generate report
+        run: |
+          pip install coverage
+          pytest -s -rf -vv --log-level=debug --cov-config=.coveragerc --cov cats tests
+      - name: "Upload coverage to Codecov"
+        uses: codecov/codecov-action@v2
+        with:
+          fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
