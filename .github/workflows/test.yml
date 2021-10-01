@@ -1,5 +1,11 @@
 name: GitHub Action for Retype
-on: [ push, pull_request ]
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -7,16 +13,20 @@ jobs:
       OS: ubuntu-latest
       PYTHON: '3.10.0rc2'
     steps:
-      - uses: checkout@v2
+      - uses: actions/checkout@v2
         with:
           fetch-depth: ‘2’
       - name: Setup Python
         uses: actions/setup-python@master
         with:
           python-version: 3.10.0-rc2
-      - name: Generate report
+      - name: Install dependencies
         run: |
-          pip install coverage
+          python -m pip install --upgrade pip
+          pip install poetry
+          poetry install --no-root -E djantic
+      - name: Test with pytest + generate coverage
+        run:
           pytest -s -rf -vv --log-level=debug --cov-config=.coveragerc --cov cats tests
       - name: "Upload coverage to Codecov"
         uses: codecov/codecov-action@v2
