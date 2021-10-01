@@ -27,7 +27,7 @@ def cats_handshake() -> Handshake:
 
 @fixture(scope='session')
 def cats_apis() -> list[Api]:
-    from tests.handlers import api
+    from tests.test_v2.handlers import api
     yield [
         api,
     ]

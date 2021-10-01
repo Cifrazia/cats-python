@@ -1,4 +1,4 @@
-name: Pytest + Coverage
+name: Python
 
 on:
   push:
@@ -25,13 +25,18 @@ jobs:
           python -m pip install --upgrade pip
           pip install poetry wheel
           poetry config experimental.new-installer false
-          poetry install --no-root -E djantic
+          poetry install -E djantic
       - name: Test with pytest + generate coverage
         shell: bash
         run: |
           poetry run pytest -s -rf -vv --log-level=debug --cov-config=.coveragerc --cov cats tests
-      - name: "Upload coverage to Codecov"
+      - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v2
         with:
           fail_ci_if_error: true
           token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
+      - name: Publish to PyPI
+        shell: bash
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+        run: |
+          poetry publish -u __token__ -p ${{ secrets.PYPI_API_TOKEN }}
