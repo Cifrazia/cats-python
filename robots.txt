@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://adambrianbright.github.io/cats-python/sitemap.xml.gz
+Sitemap: https://cifrazia.github.io/cats-python/sitemap.xml.gz
