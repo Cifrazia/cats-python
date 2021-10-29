@@ -13,12 +13,6 @@ from cats.v2 import C_NONE, Compressor
 from cats.v2.action import BaseAction, Input
 from cats.v2.config import Config
 
-try:
-    from uvloop.loop import TimerHandle as UVTimerHandle
-except ImportError:
-    class UVTimerHandle:
-        pass
-
 __all__ = [
     'ConnType',
     'Connection',
@@ -309,7 +303,7 @@ class Connection:
         for task in self._close_tasks():
             if task is None:
                 continue
-            if isinstance(task, (asyncio.TimerHandle, UVTimerHandle)):
+            if isinstance(task, asyncio.TimerHandle):
                 task.cancel()
             elif not task.done():
                 if exc and not isinstance(task, asyncio.Task):

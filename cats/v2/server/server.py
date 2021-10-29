@@ -19,6 +19,8 @@ __all__ = [
     'Server',
 ]
 
+from cats.v2.server.proxy import handle_with_proxy
+
 logging = getLogger('CATS.Server')
 
 
@@ -56,6 +58,7 @@ class Server(TCPServer):
             if _filter(server, conn)
         ))
 
+    @handle_with_proxy
     async def handle_stream(self, stream: IOStream, address: tuple[str, int]) -> None:
         try:
             protocol_version = as_uint(await stream.read_bytes(4))

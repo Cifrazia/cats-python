@@ -13,7 +13,19 @@ Expected: Q1 2022
 
 - [ ] Added different scheme language support: YAML, TOML
 
-## `4.5.5` [!badge variant="info" text="LATEST"]
+## `4.5.6` [!badge variant="info" text="LATEST"]
+
+Released: 2021-09-18
+
+### Added
+
+- [x] Added `Proxy Protocol` support
+
+### Removed
+
+- [x] Removed `uvloop` support
+
+## `4.5.5`
 
 Released: 2021-09-18
 
