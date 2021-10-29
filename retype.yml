@@ -1,7 +1,7 @@
 input: wiki
 output: .retype
-cname: adambrianbright.github.io
-url: https://adambrianbright.github.io/cats-python/
+cname: cifrazia.github.io
+url: https://cifrazia.github.io/cats-python/
 branding:
   title: CATS
   label: python
@@ -11,19 +11,19 @@ meta:
   title: " | CATS python"
 favicon: img/favicon.png
 edit:
-  repo: https://github.com/AdamBrianBright/cats-python
-  branch: master
+  repo: https://github.com/Cifrazia/cats-python
+  branch: main
   base: wiki
   label: Edit on GitHub
 links:
   - text: Home
-    link: https://adambrianbright.github.io/cats-python/
+    link: https://cifrazia.github.io/cats-python/
   - text: GitHub
-    link: https://github.com/AdamBrianBright/cats-python
+    link: https://github.com/Cifrazia/cats-python
   - text: Issues
-    link: https://github.com/AdamBrianBright/cats-python/issues
+    link: https://github.com/Cifrazia/cats-python/issues
   - text: TODO
-    link: https://github.com/AdamBrianBright/cats-python/projects/1
+    link: https://github.com/Cifrazia/cats-python/projects/1
 footer:
   copyright: "© Copyright {{ year }}. [Cifrazia, Inc.](https://cifrazia.com/) All rights reserved."
   links:
