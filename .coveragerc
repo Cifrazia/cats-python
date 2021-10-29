@@ -6,7 +6,6 @@ omit =
   */__main__.py
 
 [report]
-fail_under = 80.0
 show_missing = True
 
 exclude_lines =
