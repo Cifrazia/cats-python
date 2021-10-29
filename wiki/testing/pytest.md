@@ -1,3 +1,7 @@
+---
+icon: dot
+---
+
 # Pytest plugin
 
 `cats-python` contains

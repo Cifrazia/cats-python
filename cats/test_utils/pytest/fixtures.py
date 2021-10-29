@@ -1,11 +1,9 @@
 import warnings
-from typing import Type
 
 from pytest import PytestWarning, fixture, mark
 
 from cats.test_utils.client import Connection
-from cats.v2 import Config, Handshake
-from cats.v2.auth import Auth
+from cats.v2 import Auth, Config, Handshake
 from cats.v2.server import Api, Application, Connection as ServerConnection, Middleware, Server, default_error_handler
 
 __all__ = [
@@ -39,7 +37,7 @@ def cats_auth() -> Auth | None:
 
 @fixture(scope='session')
 def cats_middleware() -> list[Middleware]:
-    warnings.warn(PytestWarning('You may want to overwrite "cats_middleware" fixture'))
+    warnings.warn(PytestWarning('Consider overwriting "cats_middleware" fixture'))
     return [
         default_error_handler,
     ]
@@ -47,7 +45,7 @@ def cats_middleware() -> list[Middleware]:
 
 @fixture(scope='function')
 def cats_api_version() -> int:
-    warnings.warn(PytestWarning('You may want to overwrite "cats_api_version" fixture'))
+    warnings.warn(PytestWarning('Consider overwriting "cats_api_version" fixture'))
     return 1
 
 
@@ -62,7 +60,7 @@ def cats_config(cats_handshake) -> Config:
 
 
 @fixture(scope='session')
-def cats_server_connection() -> Type[ServerConnection] | None:
+def cats_server_connection() -> type[ServerConnection] | None:
     return None
 
 

@@ -1,1 +1,0 @@
-# FIXME: Cover compression

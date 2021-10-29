@@ -3,7 +3,7 @@ import os
 
 from pydantic import BaseModel, Field
 
-from cats.v2 import Action, StreamAction, T_BYTE
+from cats.v2 import Action, ByteCodec, StreamAction
 from cats.v2.server import Api, Handler
 
 __all__ = [
@@ -56,7 +56,7 @@ class DelayedHandler(Handler, api=api, id=0xFFFF, name='delayed response'):
         yield b'!'
 
     async def handle(self):
-        return StreamAction(self.gen(), data_type=T_BYTE)
+        return StreamAction(self.gen(), data_type=ByteCodec.type_id)
 
 
 class InputHandler(Handler, api=api, id=0xFFA0, name='internal requests'):

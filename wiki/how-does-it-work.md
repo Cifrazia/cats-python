@@ -35,48 +35,6 @@ icon: question
 
 ### Server: Listen for requests
 
-==- Connection life flow
-
-```mermaid
-flowchart TD
-   subgraph g_conn ["Server connection"]
-      TASK("Asyncio task")
-      ACTION("New Action")
-      FORK("Is action a request")
-      HANDLE("Handle action")
-      HANDLE_FORK("Has issued conn.ask()?")
-      ASK("Ask for input")
-      FUTURE("Future pool")
-      HANDLE_RES_FORK("Is result an Action")
-      SET_DONE("Set future done")
-      SEND_TO_CLIENT("Send message to client")
-   end
-   subgraph g_client ["Client"]
-      USR("User request")
-      RESPONSE("Action received")
-      QUESTION("Input received")
-      REPLY("Reply to input")
-      SEND_TO_SERVER("Send message to server")
-   end
-   subgraph g_mq ["RPC/MQ"]
-      EVENT("New RPC/MQ event")
-   end
-   TASK-->ACTION-->FORK
-   FORK-->|Yes|HANDLE-->HANDLE_FORK
-   HANDLE_FORK-->|Yes|ASK
-   ASK-->|Send action|QUESTION
-   ASK-->|Wait for future|FUTURE-->|future is done|HANDLE_FORK
-   HANDLE_FORK-->|No|HANDLE_RES_FORK
-   HANDLE_RES_FORK-->|Yes|SEND_TO_CLIENT-->RESPONSE
-   FORK-->|No|SET_DONE-->FUTURE
-   USR-->ACTION
-   QUESTION-->REPLY-->ACTION
-   SEND_TO_SERVER-->ACTION
-   EVENT-->ACTION
-```
-
-===
-
 1. Try:
    1. Receive `action_id: uInt1`
    2. Find matching `Action` type

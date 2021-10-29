@@ -8,17 +8,17 @@ from typing import Iterable
 import sentry_sdk
 from tornado.iostream import IOStream
 
-from cats.errors import ProtocolError
-from cats.identity import Identity, IdentityObject
-from cats.types import BytesAnyGen
-from cats.utils import as_uint
 from cats.v2.action import *
 from cats.v2.auth import AuthError
 from cats.v2.config import Config
 from cats.v2.connection import Connection as BaseConnection
+from cats.v2.errors import ProtocolViolation
+from cats.v2.identity import Identity, IdentityObject
 from cats.v2.server.application import Application
 from cats.v2.server.handlers import HandlerItem
 from cats.v2.statement import ClientStatement, ServerStatement
+from cats.v2.types import BytesAnyGen
+from cats.v2.utils import from_uint
 
 __all__ = [
     'Connection',
@@ -27,8 +27,7 @@ __all__ = [
 
 class Connection(BaseConnection):
     __slots__ = (
-        'api_version',
-        'client',
+        'client_statement',
         'address',
         'protocol',
         '_stream',
@@ -40,14 +39,13 @@ class Connection(BaseConnection):
 
     def __init__(self, stream: IOStream, address: tuple[str, int], protocol: int, conf: Config, app: Application):
         super().__init__(conf)
-        self.api_version: int | None = None
         self.address: tuple[str, int] = address
         self.protocol: int = protocol
         self._stream: IOStream = stream
         self._app = app
         self._credentials = None
         self._idle_timer: asyncio.Future | None = None
-        self.client: ClientStatement | None = None
+        self.client_statement: ClientStatement | None = None
         self.debug(f'New connection established: {address}')
 
     @property
@@ -55,17 +53,15 @@ class Connection(BaseConnection):
         return self._app
 
     async def init(self):
-        self.client: ClientStatement = ClientStatement.unpack(
-            await self.read(as_uint(await self.read(4)))
-        )
-        self.api_version = self.client.api
-        self.set_compressors(self.client.compressors, self.client.default_compression)
-        self.debug(f'[RECV {self.address}] {self.client}')
+        client_stmt = await self.read(from_uint(await self.read(4)))
+        self.client_statement: ClientStatement = ClientStatement.unpack(client_stmt, self.conf.schemes)
+        self.options.api_version = self.client_statement.api
+        self.set_compressors(self.client_statement.compressors, self.client_statement.default_compression)
+        self.set_scheme(self.client_statement.scheme_format)
+        self.debug(f'[RECV {self.address}] {self.client_statement}')
 
-        server_stmt = ServerStatement(
-            server_time=time_ns() // 1000_000,
-        )
-        await self.write(server_stmt.pack())
+        server_stmt = ServerStatement(server_time=time_ns() // 1000_000)
+        await self.write(server_stmt.pack(self.options.scheme))
         self.debug(f'[SEND {self.address}] {server_stmt}')
 
         if self.conf.handshake is not None:
@@ -79,22 +75,39 @@ class Connection(BaseConnection):
             if action.message_id in self.input_pool:
                 self.input_pool[action.message_id].done(action)
             else:
-                raise ProtocolError('Received answer but input does`t exists', conn=self)
+                raise ProtocolViolation('Received answer but input does`t exists', conn=self)
         elif isinstance(action, CancelInputAction):
+            self.lock_read.release()
             if action.message_id in self.input_pool:
                 self.input_pool[action.message_id].cancel()
-            await action.dump_data(0)
         elif isinstance(action, DownloadSpeedAction):
+            self.lock_read.release()
             limit = action.speed
             if not limit or (1024 <= limit <= 33_554_432):
-                self.download_speed = limit
+                self.options.download_speed = limit
             else:
-                raise ProtocolError('Unsupported download speed limit', conn=self)
-            await action.dump_data(0)
+                raise ProtocolViolation('Unsupported download speed limit', conn=self)
         elif isinstance(action, PingAction):
+            self.lock_read.release()
             self.debug(f'Ping {action.send_time} [-] {action.recv_time}')
             await action.send(self)
-            await action.dump_data(0)
+        elif isinstance(action, StartEncryptionAction):
+            self.lock_read.release()
+            exchanger = self.conf.key_exchangers.find_strict(action.exchange_type)
+            cypher = self.conf.cyphers.find_strict(action.cypher_type)
+            self.debug(f'Exchanging keys with {exchanger}')
+            exchanger.generate()
+            self.options.symmetric_key = exchanger.derive(action.public_key)
+            self.debug(f'Encrypting connection with {cypher}')
+            self.options.cypher = cypher
+            response = StartEncryptionAction(action.cypher_type, action.exchange_type, exchanger.public_bytes())
+            await response.send(self)
+        elif isinstance(action, StopEncryptionAction):
+            self.lock_read.release()
+            self.debug(f'Erasing symmetric keys')
+            self.options.symmetric_key = None
+            self.options.cypher = None
+            await action.send(self)
         elif isinstance(action, Action):
             async with self.preserve_message_id(action.message_id):
                 handler = self.dispatch(action.handler_id)
@@ -102,12 +115,18 @@ class Connection(BaseConnection):
                     result = await self.app.run(handler(action))
                     if result is not None:
                         if not isinstance(result, Action):
-                            raise ProtocolError('Returned invalid response', conn=self)
+                            raise ProtocolViolation('Returned invalid response', conn=self)
 
-                        result.handler_id = action.handler_id
-                        result.message_id = action.message_id
-                        result.offset = action.offset
-                        await result.send(self)
+                        if result is action:
+                            await self.send(
+                                action.handler_id, action.data, action.message_id, action.compressor,
+                                headers={'Offset': action.skip}, status=200
+                            )
+                        else:
+                            result.handler_id = action.handler_id
+                            result.message_id = action.message_id
+                            result.offset = action.skip
+                            await result.send(self)
                 except action.conn.conf.ignore_errors:
                     raise
                 except Exception as err:
@@ -122,25 +141,25 @@ class Connection(BaseConnection):
         elif isinstance(handlers, list):
             for item in handlers:
                 item: HandlerItem
-                end_version = self.api_version if item.end_version is None else item.end_version
-                if item.version <= self.api_version <= end_version:
+                end_version = self.options.api_version if item.end_version is None else item.end_version
+                if item.version <= self.options.api_version <= end_version:
                     return item.handler
 
-        raise ProtocolError(f'Handler with id {handler_id} not found', conn=self)
+        raise ProtocolViolation(f'Handler with id {handler_id} not found', conn=self)
 
-    async def send(self, handler_id: int, data=None, message_id=None, compression=None, *,
+    async def send(self, handler_id: int, data=None, message_id=None, compressor=None, *,
                    headers=None, status=None):
         action = Action(data=data, headers=headers, status=status,
                         message_id=self.get_free_message_id() if message_id is None else message_id,
-                        handler_id=handler_id, compression=compression)
+                        handler_id=handler_id, compressor=compressor)
         await action.send(self)
 
     async def send_stream(self, handler_id: int, data: BytesAnyGen, data_type: int,
-                          message_id=None, compression=None, *,
+                          message_id=None, compressor=None, *,
                           headers=None, status=None):
         action = StreamAction(data=data, headers=headers, status=status,
                               message_id=self.get_free_message_id() if message_id is None else message_id,
-                              handler_id=handler_id, data_type=data_type, compression=compression)
+                              handler_id=handler_id, data_type=data_type, compressor=compressor)
         await action.send(self)
 
     def attach_to_channel(self, channel: str):
@@ -185,7 +204,7 @@ class Connection(BaseConnection):
         super().sign_out()
 
     def __str__(self) -> str:
-        return f'CATS.Connection: {self.host}:{self.port} api@{self.api_version}'
+        return f'CATS.Connection: {self.host}:{self.port} api@{self.options.api_version}'
 
     async def read(self, num_bytes: int, partial: bool = False) -> bytes:
         res = await self._stream.read_bytes(num_bytes, partial=partial)
@@ -205,7 +224,7 @@ class Connection(BaseConnection):
     def reset_idle_timer(self):
         if not self.conf.idle_timeout > 0:
             return
-        if self._idle_timer is not None:
+        if self._idle_timer is not None and not self._idle_timer.cancelled():
             self._idle_timer.cancel()
 
         self._idle_timer = self._loop.call_later(
@@ -216,7 +235,7 @@ class Connection(BaseConnection):
     def get_free_message_id(self) -> int:
         while True:
             message_id = randint(0x8000, 0xFFFF)
-            if message_id not in self._message_pool:
+            if message_id not in self._message_id_pool:
                 return message_id
 
     def _close_tasks(self):

@@ -2,8 +2,8 @@ import asyncio
 import hashlib
 from time import time
 
-from cats.errors import HandshakeError
-from cats.utils import bytes2hex
+from cats.v2.errors import HandshakeFailure
+from cats.v2.utils import bytes2hex
 
 __all__ = [
     'Handshake',
@@ -26,7 +26,7 @@ class Handshake:
         """
         Send valid handshake to stream and read answer
         If 0x01 - passing
-        Otherwise: raising HandshakeError
+        Otherwise: raising HandshakeFailure
         :param conn:
         :return:
         """
@@ -58,10 +58,10 @@ class SHA256TimeHandshake(Handshake):
             if handshake not in self.get_hashes(time()):
                 await conn.write(b'\x00')
                 conn.debug(f'[SEND {conn.address} Handshake failed')
-                raise HandshakeError('Invalid handshake', conn=conn, handshake=handshake)
+                raise HandshakeFailure('Invalid handshake', conn=conn, handshake=handshake)
         except UnicodeDecodeError as err:
             await conn.write(b'\x00')
-            raise HandshakeError('Malformed handshake', conn=conn, handshake=handshake) from err
+            raise HandshakeFailure('Malformed handshake', conn=conn, handshake=handshake) from err
         else:
             await conn.write(b'\x01')
             conn.debug(f'[SEND {conn.address}] Handshake passed')
@@ -73,4 +73,4 @@ class SHA256TimeHandshake(Handshake):
         if result == b'\x01':
             conn.debug(f'[SEND {conn.address}] Handshake passed')
             return
-        raise HandshakeError('Invalid handshake', conn=conn, handshake=handshake)
+        raise HandshakeFailure('Invalid handshake', conn=conn, handshake=handshake)

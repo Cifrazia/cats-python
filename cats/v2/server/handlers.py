@@ -4,14 +4,16 @@ from dataclasses import dataclass
 from logging import getLogger
 from random import random
 from time import time
-from typing import Awaitable, Type
+from typing import Awaitable
 
-from cats.errors import ActionError
-from cats.identity import Identity, IdentityObject
-from cats.plugins import Form, Scheme, SchemeTypes, scheme_json, scheme_load
-from cats.types import Json, List, T_Headers
 from cats.v2.action import Action, ActionLike, InputAction
-from cats.v2.codecs import T_FILE, T_JSON
+from cats.v2.codecs import FileCodec, SchemeCodec
+from cats.v2.errors import HandlerRulesViolation
+from cats.v2.forms import Form, FormType, SubForms, form_dump, form_load
+from cats.v2.headers import T_Headers
+from cats.v2.identity import Identity, IdentityObject
+from cats.v2.registry import Selector
+from cats.v2.types import Data, List
 
 __all__ = [
     'HandlerItem',
@@ -26,7 +28,7 @@ logging = getLogger('CATS')
 class HandlerItem:
     id: int
     name: str
-    handler: Type['Handler']
+    handler: type['Handler']
     version: int | None = None
     end_version: int | None = None
 
@@ -88,8 +90,8 @@ class Handler:
     __slots__ = ('action',)
     handler_id: int
 
-    Loader: Scheme | None = None
-    Dumper: Scheme | None = None
+    Loader: FormType | None = None
+    Dumper: FormType | None = None
 
     data_type: int | tuple[int] | None = None
     min_data_len: int | None = None
@@ -117,9 +119,9 @@ class Handler:
 
         assert id is not None
 
-        assert cls.Loader is None or (isinstance(cls.Loader, type) and issubclass(cls.Loader, SchemeTypes)), \
+        assert cls.Loader is None or (isinstance(cls.Loader, type) and issubclass(cls.Loader, Form)), \
             'Handler.Loader must be subclass of BaseSerializer | BaseModel'
-        assert cls.Dumper is None or (isinstance(cls.Dumper, type) and issubclass(cls.Dumper, SchemeTypes)), \
+        assert cls.Dumper is None or (isinstance(cls.Dumper, type) and issubclass(cls.Dumper, Form)), \
             'Handler.Dumper must be subclass of BaseSerializer | BaseModel'
 
         assert not (cls.require_auth is False and cls.require_models is not None), \
@@ -163,8 +165,8 @@ class Handler:
     async def handle(self):
         raise NotImplementedError
 
-    async def json_load(self, *, many: bool = False, plain: bool = False) -> Json | Form:
-        if self.action.data_type != T_JSON:
+    async def json_load(self, *, many: bool = False, plain: bool = False) -> Data | SubForms:
+        if self.action.data_type != SchemeCodec.type_id:
             raise TypeError('Unsupported data type. Expected JSON')
 
         data = self.action.data
@@ -172,7 +174,7 @@ class Handler:
             return data
         if many is None:
             many = isinstance(data, List)
-        return scheme_load(self.Loader, data, many=many, plain=plain)
+        return form_load(self.Loader, data, many=many, plain=plain)
 
     async def json_dump(self, data, *, headers: T_Headers = None,
                         status: int = 200, many: bool = None, plain: bool = False) -> ActionLike:
@@ -180,8 +182,8 @@ class Handler:
             if not plain:
                 if many is None:
                     many = isinstance(data, List)
-                data = scheme_json(self.Dumper, data, many=many, plain=False)
-                return Action(data=data, headers=headers, status=status, encoded=T_JSON)
+                data = form_dump(self.Dumper, data, many=many, plain=False)
+                return Action(data=data, headers=headers, status=status)
             elif not isinstance(data, self.Dumper):
                 raise TypeError('Resulted plain data does not match Dumper')
         return Action(data=data, headers=headers, status=status)
@@ -190,10 +192,10 @@ class Handler:
     def identity(self) -> Identity | IdentityObject | None:
         return self.action.conn.identity
 
-    def ask(self, data=None, data_type: int = None, compression: int = None, *,
+    def ask(self, data=None, data_type: int = None, compressor: Selector = None, *,
             headers: T_Headers = None, status: int = 200,
             bypass_limit=False, bypass_count=False, timeout=None) -> Awaitable['InputAction']:
-        return self.action.ask(data, data_type=data_type, compression=compression,
+        return self.action.ask(data, data_type=data_type, compressor=compressor,
                                headers=headers, status=status,
                                bypass_limit=bypass_limit, bypass_count=bypass_count, timeout=timeout)
 
@@ -215,7 +217,7 @@ class Handler:
         if isinstance(types, int):
             types = (types,)
         if self.action.data_type not in types:
-            raise ActionError('Received payload type is not acceptable', action=self.action)
+            raise HandlerRulesViolation('Received payload type is not acceptable', action=self.action)
 
     def _check_data_len(self):
         if (x := self.action.data_len) is None:
@@ -223,33 +225,36 @@ class Handler:
         min_len = self.min_data_len
         max_len = self.max_data_len
         if min_len is not None and x < min_len:
-            raise ActionError(f'Received payload data size is less than allowed [{min_len}]', action=self.action)
+            raise HandlerRulesViolation(f'Received payload data size is less than allowed [{min_len}]',
+                                        action=self.action)
         if max_len is not None and max_len < x:
-            raise ActionError(f'Received payload data size is more than allowed [{max_len}]', action=self.action)
+            raise HandlerRulesViolation(f'Received payload data size is more than allowed [{max_len}]',
+                                        action=self.action)
 
     def _check_models(self):
         model = self.identity.model_name if self.identity else None
         if self.block_models is not None and model in self.block_models:
-            raise ActionError(f'Model {model} is forbidden', action=self.action)
+            raise HandlerRulesViolation(f'Model {model} is forbidden', action=self.action)
         if self.require_models is not None and model not in self.require_models:
-            raise ActionError(f'Model of {self.require_models} is required, but {model} presented', action=self.action)
+            raise HandlerRulesViolation(f'Model of {self.require_models} is required, but {model} presented',
+                                        action=self.action)
 
     def _check_auth(self):
         if self.require_auth is None:
             return
         if self.require_auth ^ self.action.conn.signed_in:
             reason = 'required' if self.require_auth else 'forbidden'
-            raise ActionError(f'Authentication is {reason}', action=self.action)
+            raise HandlerRulesViolation(f'Authentication is {reason}', action=self.action)
 
     def _check_file_size(self):
-        if self.action.data_type != T_FILE:
+        if self.action.data_type != FileCodec.type_id:
             return
         for i, file in enumerate(self.action.headers.get('Files', [])):
             x = int(file['size'])
             self._check_min_max(x, self.min_file_size, self.max_file_size, f'File[{i}].size')
 
     def _check_file_total_size(self):
-        if self.action.data_type != T_FILE:
+        if self.action.data_type != FileCodec.type_id:
             return
 
         if self.action.data_len is not None:
@@ -260,7 +265,7 @@ class Handler:
         self._check_min_max(x, self.min_file_total_size, self.max_file_total_size, '∑ File[n].size')
 
     def _check_file_amount(self):
-        if self.action.data_type != T_FILE:
+        if self.action.data_type != FileCodec.type_id:
             return
 
         x = len(self.action.headers.get('Files', []))
@@ -268,6 +273,6 @@ class Handler:
 
     def _check_min_max(self, size: int, min_size: int | None, max_size: int | None, part: str) -> None:
         if min_size is not None and size < min_size:
-            raise ActionError(f'Received {part} is less than allowed [{min_size}]', action=self.action)
+            raise HandlerRulesViolation(f'Received {part} is less than allowed [{min_size}]', action=self.action)
         if max_size is not None and max_size < size:
-            raise ActionError(f'Received {part} is more than allowed [{max_size}]', action=self.action)
+            raise HandlerRulesViolation(f'Received {part} is more than allowed [{max_size}]', action=self.action)

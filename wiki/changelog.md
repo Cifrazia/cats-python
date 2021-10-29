@@ -5,15 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project poorly adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## `5.0.0` [!badge variant="info" text="NEXT"]
+## `5.1.0` [!badge variant="info" text="NEXT"]
 
 Expected: Q1 2022
 
+## `5.0.0` [!badge variant="info" text="LATEST"]
+
+Released: 2021-10-07
+
 ### Added
 
-- [ ] Added different scheme language support: YAML, TOML
+- [x] Added different scheme language support: **YAML**, **MsgPack**
+- [x] Added build&publish **GitHub Action**
 
-## `4.5.5` [!badge variant="info" text="LATEST"]
+### Changed
+
+- [x] Default scheme for payload is now **MsgPack**
+- [x] Renamed `master` brain to `main`
+- [x] Increased code coverage
+
+### Removed
+
+- [x] Removed `uvloop` support
+
+### Fixed
+
+- [x] Fixed invalid code coverage
+
+## `4.5.5`
 
 Released: 2021-09-18
 

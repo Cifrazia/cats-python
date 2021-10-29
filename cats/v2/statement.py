@@ -1,35 +1,37 @@
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from typing import Literal, TypeVar
 
-import ujson
-
-from cats import to_uint
+from cats.v2.scheme import Scheme, SchemeAPI
+from cats.v2.utils import to_uint
 
 __all__ = [
+    'Statement',
     'ClientStatement',
     'ServerStatement',
 ]
+
 T = TypeVar('T', bound='Statement')
 
 
 @dataclass
 class Statement:
-    def pack(self) -> bytes:
-        data: str = ujson.dumps(asdict(self), ensure_ascii=False, escape_forward_slashes=False)
-        return to_uint(len(data), 4) + data.encode('utf-8')
+    def pack(self, scheme: Scheme) -> bytes:
+        data = scheme.dumps(asdict(self))
+        return to_uint(len(data), 4) + data
 
     @classmethod
-    def unpack(cls, buffer: bytes) -> T:
-        return cls(**ujson.loads(buffer))  # noqa
+    def unpack(cls, buffer: bytes, scheme_api: SchemeAPI) -> T:
+        data = scheme_api.loads(buffer)
+        return cls(**data)  # noqa
 
 
 @dataclass
 class ClientStatement(Statement):
     api: int
     client_time: int
-    scheme_format: Literal['JSON']
-    compressors: list[Literal['gzip', 'zlib']]
-    default_compression: Literal['gzip', 'zlib']
+    scheme_format: Literal['json', 'yaml', 'msgpack'] = 'json'
+    compressors: list[Literal['gzip', 'zlib']] = field(default_factory=lambda: ['zlib'])
+    default_compression: Literal['gzip', 'zlib'] = 'zlib'
 
 
 @dataclass

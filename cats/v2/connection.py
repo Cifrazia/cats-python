@@ -1,23 +1,18 @@
 import asyncio
+import traceback
 from contextlib import asynccontextmanager
 from logging import Logger
-from typing import TypeVar
+from typing import Generator, TypeVar
 
 import sentry_sdk
 from tornado.iostream import IOStream
 
-from cats.errors import ProtocolError
-from cats.identity import Identity
-from cats.types import BytesAnyGen
-from cats.v2 import C_NONE, Compressor
 from cats.v2.action import BaseAction, Input
 from cats.v2.config import Config
-
-try:
-    from uvloop.loop import TimerHandle as UVTimerHandle
-except ImportError:
-    class UVTimerHandle:
-        pass
+from cats.v2.errors import ProtocolViolation
+from cats.v2.identity import Identity
+from cats.v2.options import Options
+from cats.v2.types import BytesAnyGen
 
 __all__ = [
     'ConnType',
@@ -32,22 +27,20 @@ class Connection:
     Base connection interface, that used by both client and server side
     """
     __slots__ = (
-        'download_speed',
-        'scope',
-        'input_pool',
-        'send_queue',
-        'send_task',
-        'recv_future',
-        'locker',
-        'conf',
-        'allowed_compressors',
-        'default_compressor',
         '_closed',
-        '_loop',
+        '_credentials',
         '_identity',
         '_identity_timer',
-        '_credentials',
-        '_message_pool',
+        '_loop',
+        '_message_id_pool',
+        'conf',
+        'input_pool',
+        'lock_write',
+        'lock_read',
+        'options',
+        'scope',
+        'send_queue',
+        'send_task',
     )
 
     PASS_EXCEPTIONS = (
@@ -62,31 +55,30 @@ class Connection:
     logging: Logger
 
     def __init__(self, conf: Config):
-        self.conf: Config = conf
-        self.download_speed: int = 0
-        self.scope: sentry_sdk.Scope = sentry_sdk.Scope()
-        self.input_pool: dict[int, Input] = {}
-        self.send_queue: asyncio.Queue = asyncio.Queue()
-        self.send_task: asyncio.Task | None = None
-        self.recv_future: asyncio.Future | None = None
-        self.locker: asyncio.Future | None = None
-        self.allowed_compressors: set[int] = {C_NONE}
-        self.default_compressor: int = C_NONE
         self._closed: bool = False
-        self._loop = asyncio.get_running_loop()
+        self._credentials = None
         self._identity: Identity | None = None
         self._identity_timer: asyncio.TimerHandle | None = None
-        self._credentials = None
-        self._message_pool: list[int] = []
+        self._loop = asyncio.get_running_loop()
+        self._message_id_pool: list[int] = []
+        self.conf: Config = conf
+        self.input_pool: dict[int, Input] = {}
+        self.lock_write: asyncio.Lock = asyncio.Lock()
+        self.lock_read: asyncio.Lock = asyncio.Lock()
+        self.options: Options = Options()
+        self.scope: sentry_sdk.Scope = sentry_sdk.Scope()
 
     def set_compressors(self, allowed: list[str], default: str = None):
-        allowed = [a.lower() for a in allowed]
-        self.allowed_compressors = {Compressor.codes[a] for a in allowed if a in Compressor.codes}
-        self.allowed_compressors.add(C_NONE)
-        if default is None or default.lower() not in Compressor.codes:
-            self.default_compressor = C_NONE
-        else:
-            self.default_compressor = Compressor.codes[default.lower()]
+        compressors = self.conf.compressors
+        self.options.allowed_compressors = [
+            compressor
+            for type_name in allowed
+            if (compressor := compressors.find(type_name.lower()))
+        ]
+        self.options.default_compressor = compressors.find((default or '').lower())
+
+    def set_scheme(self, scheme_format: str):
+        self.options.scheme = self.conf.schemes.find_strict(scheme_format)
 
     @property
     def is_open(self):
@@ -100,40 +92,30 @@ class Connection:
     def port(self) -> int:
         return self.address[1]
 
+    async def init(self):
+        """Init connection state"""
+        raise NotImplementedError
+
     async def start(self) -> None:
         """
         Init connection and start the reading loop
         :return:
         """
-        self.send_task = self._loop.create_task(self.send_loop())
-        self.send_task.add_done_callback(self.on_tick_done)
-
         await self.recv_loop()
-
-    async def init(self):
-        """Init connection state"""
-        raise NotImplementedError
-
-    async def send_loop(self):
-        while self.is_open:
-            waiter, self.locker = await self.send_queue.get()
-            waiter.set_result(None)
-            await self.locker
 
     async def recv_loop(self):
         while self.is_open:
-            if self.recv_future is not None:
-                await self.recv_future
-
-            self.recv_future = asyncio.Future()
+            await self.lock_read.acquire()
+            if not self.is_open:
+                return
             task = self._loop.create_task(self.tick())
             task.add_done_callback(self.on_tick_done)
 
     async def tick(self):
         action_type_id = await self.read(1)
-        action_class = BaseAction.get_class_by_type_id(action_type_id)
+        action_class = BaseAction.get_type_by_id(action_type_id)
         if action_class is None:
-            raise ProtocolError(f'Received unknown Action Type ID [{action_type_id.hex()}]', conn=self)
+            raise ProtocolViolation(f'Received unknown Action Type ID [{action_type_id.hex()}]', conn=self)
 
         try:
             await self.handle(await action_class.init(self))
@@ -158,12 +140,12 @@ class Connection:
         """
         raise NotImplementedError
 
-    async def send(self, handler_id: int, data=None, message_id=None, compression=None, *,
+    async def send(self, handler_id: int, data=None, message_id=None, compressor=None, *,
                    headers=None, status=None):
         raise NotImplementedError
 
     async def send_stream(self, handler_id: int, data: BytesAnyGen, data_type: int,
-                          message_id=None, compression=None, *,
+                          message_id=None, compressor=None, *,
                           headers=None, status=None):
         raise NotImplementedError
 
@@ -203,27 +185,15 @@ class Connection:
         e.g. next preserve_message_id() with the same message_id won't run until previous stop
         """
         try:
-            while message_id in self._message_pool:
+            while message_id in self._message_id_pool:
                 await asyncio.sleep(0.5)
-            self._message_pool.append(message_id)
+            self._message_id_pool.append(message_id)
             yield
         finally:
             try:
-                self._message_pool.remove(message_id)
+                self._message_id_pool.remove(message_id)
             except ValueError:
                 pass
-
-    @asynccontextmanager
-    async def lock_write(self):
-        """
-        Lock write ability until previously called are done
-        """
-        waiter = asyncio.Future()
-        locker = asyncio.Future()
-        await self.send_queue.put((waiter, locker))
-        await waiter
-        yield
-        locker.set_result(None)
 
     @property
     def identity(self) -> Identity | None:
@@ -303,24 +273,28 @@ class Connection:
         self._closed = True
         self.sign_out()
         if exc and not isinstance(exc, self.conf.ignore_errors):
-            self.logging.error(f'{exc.__class__.__qualname__} {exc}')
+            tb = "\n".join([i for i in traceback.format_tb(exc.__traceback__)])
+            self.logging.error(f'{exc!r} \n{tb}')
             sentry_sdk.capture_exception(exc, scope=self.scope)
         self._stream.close(exc)
         for task in self._close_tasks():
             if task is None:
                 continue
-            if isinstance(task, (asyncio.TimerHandle, UVTimerHandle)):
-                task.cancel()
+            if isinstance(task, asyncio.TimerHandle):
+                if not task.cancelled():
+                    task.cancel()
+            elif isinstance(task, asyncio.Lock):
+                if task.locked():
+                    task.release()
             elif not task.done():
                 if exc and not isinstance(task, asyncio.Task):
                     task.set_exception(exc)
                 else:
                     task.cancel()
 
-    def _close_tasks(self):
-        yield self.locker
-        yield self.recv_future
-        yield self.send_task
+    def _close_tasks(self) -> Generator[asyncio.Task | asyncio.TimerHandle | asyncio.Future | asyncio.Lock, None, None]:
+        yield self.lock_read
+        yield self.lock_write
 
     def debug(self, msg: str, *args, **kwargs):
         if self.conf.debug:

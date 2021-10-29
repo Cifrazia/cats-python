@@ -9,11 +9,11 @@ from tornado.iostream import IOStream
 from tornado.tcpserver import TCPServer
 from tornado.testing import bind_unused_port
 
-from cats.errors import CatsError
-from cats.utils import as_uint, to_uint
 from cats.v2.connection import ConnType, Connection
+from cats.v2.errors import CatsError
 from cats.v2.server.application import Application
 from cats.v2.server.connection import Connection as ServerConnection
+from cats.v2.utils import from_uint, to_uint
 
 __all__ = [
     'Server',
@@ -58,7 +58,7 @@ class Server(TCPServer):
 
     async def handle_stream(self, stream: IOStream, address: tuple[str, int]) -> None:
         try:
-            protocol_version = as_uint(await stream.read_bytes(4))
+            protocol_version = from_uint(await stream.read_bytes(4))
             if not self.protocols[0] <= protocol_version <= self.protocols[1]:
                 await stream.write(to_uint(self.protocols[1], 4))
                 stream.close(CatsError('Unsupported protocol version'))

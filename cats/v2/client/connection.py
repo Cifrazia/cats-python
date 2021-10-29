@@ -9,13 +9,14 @@ from typing import Awaitable, Callable
 from tornado.iostream import IOStream
 from tornado.tcpclient import TCPClient
 
-from cats.errors import ProtocolError
-from cats.types import BytesAnyGen
-from cats.utils import as_uint, to_uint
+from cats.v2 import GzipCompressor, MsgPack, ZlibCompressor
 from cats.v2.action import Action, ActionLike, BaseAction, PingAction, StreamAction
 from cats.v2.config import Config
 from cats.v2.connection import Connection as BaseConnection
+from cats.v2.errors import ProtocolViolation
 from cats.v2.statement import ClientStatement, ServerStatement
+from cats.v2.types import BytesAnyGen
+from cats.v2.utils import from_uint, to_uint
 
 __all__ = [
     'Connection',
@@ -45,7 +46,6 @@ class Connection(BaseConnection):
         self.subscriptions: dict[int, dict[int, Callable[[Action], Awaitable[None] | None]]] = defaultdict(dict)
         self._sub_id: int = 0
         self._listener: asyncio.Task | None = None
-        self._sender: asyncio.Task | None = None
         self._pinger: asyncio.Task | None = None
         self._recv_pool: dict[int, asyncio.Future] = {}
         self._stream: IOStream | None = None
@@ -61,33 +61,28 @@ class Connection(BaseConnection):
         self.debug(f'New connection established: {self.address}')
 
     async def start(self) -> None:
-        self._sender = self._loop.create_task(self.send_loop())
         self._pinger = self._loop.create_task(self.ping())
-
-        self._sender.add_done_callback(self.on_tick_done)
         self._pinger.add_done_callback(self.on_tick_done)
-
         await self.recv_loop()
 
     async def init(self):
         await self.write(to_uint(self.PROTOCOL_VERSION, 4))
         result = await self.read(4)
         if result != bytes(4):
-            raise ProtocolError(f'Unsupported protocol version. '
-                                f'Please upgrade your client to: {as_uint(result)}', conn=self)
+            raise ProtocolViolation(f'Unsupported protocol version. '
+                                    f'Please upgrade your client to: {from_uint(result)}', conn=self)
 
         client_stmt = ClientStatement(
             api=self.api_version,
             client_time=time_ns() // 1000_000,
-            scheme_format='JSON',
-            compressors=['gzip', 'zlib'],
-            default_compression='zlib',
+            scheme_format=MsgPack.type_name,
+            compressors=[GzipCompressor.type_name, ZlibCompressor.type_name],
+            default_compression=ZlibCompressor.type_name,
         )
-        self.set_compressors(['gzip', 'zlib'], 'zlib')
-        await self.write(client_stmt.pack())
-        stmt: ServerStatement = ServerStatement.unpack(
-            await self.read(as_uint(await self.read(4)))
-        )
+        self.set_compressors([GzipCompressor.type_name, ZlibCompressor.type_name], ZlibCompressor.type_name)
+        self.set_scheme(MsgPack.type_name)
+        await self.write(client_stmt.pack(scheme=MsgPack))
+        stmt: ServerStatement = ServerStatement.unpack(await self.read(from_uint(await self.read(4))), scheme=MsgPack)
         self.time_delta = (stmt.server_time / 1000) - time()
 
         if self.conf.handshake is not None:
@@ -143,20 +138,20 @@ class Connection(BaseConnection):
         await self.write(b'\x05')
         await self.write(to_uint(speed, 4))
 
-    async def send(self, handler_id: int, data=None, message_id=None, compression=None, *,
+    async def send(self, handler_id: int, data=None, message_id=None, compressor=None, *,
                    headers=None, status=None) -> ActionLike | None:
         action = Action(data=data, headers=headers, status=status,
                         message_id=self.get_free_message_id() if message_id is None else message_id,
-                        handler_id=handler_id, compression=compression)
+                        handler_id=handler_id, compressor=compressor)
         await action.send(self)
         return await self.recv(action.message_id)
 
     async def send_stream(self, handler_id: int, data: BytesAnyGen, data_type: int,
-                          message_id=None, compression=None, *,
+                          message_id=None, compressor=None, *,
                           headers=None, status=None) -> ActionLike | None:
         action = StreamAction(data=data, headers=headers, status=status,
                               message_id=self.get_free_message_id() if message_id is None else message_id,
-                              handler_id=handler_id, data_type=data_type, compression=compression)
+                              handler_id=handler_id, data_type=data_type, compressor=compressor)
         await action.send(self)
         return await self.recv(action.message_id)
 
@@ -180,11 +175,10 @@ class Connection(BaseConnection):
     def get_free_message_id(self) -> int:
         while True:
             message_id = randint(0x0000, 0x7FFF)
-            if message_id not in self._message_pool:
+            if message_id not in self._message_id_pool:
                 return message_id
 
     def _close_tasks(self):
         yield from super()._close_tasks()
         yield from self._recv_pool.values()
         yield self._pinger
-        yield self._sender

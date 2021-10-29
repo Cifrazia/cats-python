@@ -1,13 +1,15 @@
 import asyncio
 from logging import getLogger
-from pathlib import Path
 from time import time_ns
-from typing import AsyncIterator, Type, TypeAlias, TypeVar
+from typing import AsyncIterator, TypeAlias, TypeVar
 
-import struct_model
+from struct_model import *
 
-from cats.types import BytesAnyGen, BytesAsyncGen, Headers, T_Headers
+from cats.v2.config import Config
 from cats.v2.connection import Connection
+from cats.v2.headers import Headers, T_Headers
+from cats.v2.registry import Selector
+from cats.v2.types import BytesAnyGen
 
 __all__ = [
     'ActionLike',
@@ -20,6 +22,8 @@ __all__ = [
     'DownloadSpeedAction',
     'CancelInputAction',
     'PingAction',
+    'StartEncryptionAction',
+    'StopEncryptionAction',
 ]
 
 logging = getLogger('CATS.conn')
@@ -39,7 +43,7 @@ class Input:
                  message_id: int,
                  bypass_count: bool = False,
                  timeout: float | int = None):
-        self.timer: asyncio.Task | None
+        self.timer: asyncio.TimerHandle | None = None
         self.future: asyncio.Future = future
         self.conn: Connection = conn
         self.message_id: int = message_id
@@ -54,13 +58,15 @@ class Input:
 
 class BaseAction(dict):
     __slots__ = ('data', 'headers', 'message_id', 'conn')
-    __registry__: dict[bytes, Type['BaseAction']] = {}
+    __registry__: dict[bytes, type['BaseAction']] = {}
     HEADER_SEPARATOR = b'\x00\x00'
 
     type_id: bytes
     Head: type
+    conf: property | Config | None
     status: property | int
     offset: property | int
+    skip: property | int
 
     def __init__(self, data=None, *, headers: T_Headers = None, status: int = None,
                  message_id: int = None):
@@ -74,9 +80,9 @@ class BaseAction(dict):
     def __init_subclass__(cls, *, abstract: bool = False) -> None: ...
 
     @classmethod
-    def get_class_by_type_id(cls, type_id: bytes) -> Type['BaseAction'] | None: ...
+    def get_type_by_id(cls, type_id: bytes) -> type['BaseAction'] | None: ...
 
-    async def ask(self, data=None, data_type: int = None, compression: int = None, *,
+    async def ask(self, data=None, data_type: int = None, compressor: Selector = None, *,
                   headers: T_Headers = None, status: int = None,
                   bypass_limit: bool = False, bypass_count: bool = False,
                   timeout: int | float = None) -> 'InputAction': ...
@@ -95,15 +101,16 @@ class BaseAction(dict):
 
 
 class BasicAction(BaseAction):
-    __slots__ = ('data_len', 'data_type', 'compression', 'encoded')
+    __slots__ = ('data_len', 'data_type', 'compressor', 'encoded', '_prepared')
 
     def __init__(self, data=None, *, headers: T_Headers = None, status: int = None,
-                 message_id: int = None, data_len: int = None, data_type: int = None, compression: int = None,
-                 encoded: int = None):
+                 message_id: int = None, data_len: int = None, data_type: int = None, compressor: Selector = None,
+                 encoded: Selector = None):
         self.data_len: int | None = data_len
         self.data_type: int | None = data_type
-        self.compression: int | None = compression
-        self.encoded: int | None = encoded
+        self.compressor: Selector | None = compressor
+        self.encoded: Selector | None = encoded
+        self._prepared: bool = False
         super().__init__(data, headers=headers, status=status, message_id=message_id)
 
     async def recv_data(self) -> None: ...
@@ -114,32 +121,33 @@ class BasicAction(BaseAction):
 
     async def _recv_chunk(self, left: int) -> (bytes, int): ...
 
-    async def _encode(self) -> tuple[Path | bytes, int, int, int]: ...
+    async def prepare(self) -> None: ...
 
-    async def _write_data_to_stream(self, conn: Connection, data: Path | bytes,
-                                    data_len: int, data_type: int, compression: int) -> None: ...
+    async def _encode(self) -> None: ...
+
+    async def _write_data_to_stream(self) -> None: ...
 
     def __repr__(self) -> str: ...
 
 
 class Action(BasicAction):
-    class Head(struct_model.StructModel):
-        handler_id: struct_model.uInt2
-        message_id: struct_model.uInt2
-        send_time: struct_model.uInt8
-        data_type: struct_model.uInt1
-        compression: struct_model.uInt1
-        data_len: struct_model.uInt4
+    class Head(StructModel):
+        handler_id: uInt2
+        message_id: uInt2
+        send_time: uInt8
+        data_type: uInt1
+        compressor: uInt1
+        data_len: uInt4
 
     __slots__ = ('handler_id', 'send_time')
 
     def __init__(self, data=None, *, headers: T_Headers = None, status: int = None, message_id: int = None,
-                 handler_id: int = None, data_len: int = None, data_type: int = None, compression: int = None,
-                 send_time: float = None, encoded: int = None):
+                 handler_id: int = None, data_len: int = None, data_type: int = None, compressor: Selector = None,
+                 send_time: float = None, encoded: Selector = None):
         self.handler_id: int | None = handler_id
         self.send_time = send_time or (time_ns() // 1000000)
         super().__init__(data, headers=headers, status=status, message_id=message_id,
-                         data_len=data_len, data_type=data_type, compression=compression, encoded=encoded)
+                         data_len=data_len, data_type=data_type, compressor=compressor, encoded=encoded)
 
     @classmethod
     async def init(cls, conn: Connection) -> 'Action': ...
@@ -153,18 +161,18 @@ class Action(BasicAction):
 
 
 class StreamAction(Action):
-    class Head(struct_model.StructModel):
-        handler_id: struct_model.uInt2
-        message_id: struct_model.uInt2
-        send_time: struct_model.uInt8
-        data_type: struct_model.uInt1
-        compression: struct_model.uInt1
+    class Head(StructModel):
+        handler_id: uInt2
+        message_id: uInt2
+        send_time: uInt8
+        data_type: uInt1
+        compressor: uInt1
 
     def __init__(self, data=None, *, headers: T_Headers = None, status: int = None, message_id: int = None,
-                 handler_id: int = None, data_type: int = None, compression: int = None,
+                 handler_id: int = None, data_type: int = None, compressor: Selector = None,
                  send_time: float = None):
         super().__init__(data, headers=headers, status=status, message_id=message_id,
-                         handler_id=handler_id, data_type=data_type, compression=compression,
+                         handler_id=handler_id, data_type=data_type, compressor=compressor,
                          send_time=send_time)
 
     @classmethod
@@ -179,11 +187,9 @@ class StreamAction(Action):
 
     async def _recv_small_chunk(self, fh, chunk_size) -> int: ...
 
-    async def _encode_gen(self, conn: Connection) -> tuple[BytesAsyncGen, int]: ...
-
     async def send(self, conn: Connection) -> None: ...
 
-    async def _write_data_to_stream(self, conn: Connection, data: BytesAsyncGen, *_, compression: int) -> None: ...
+    async def _write_data_to_stream(self) -> None: ...
 
     async def _async_gen(self, gen: BytesAnyGen, chunk_size: int) -> AsyncIterator[bytes]: ...
 
@@ -191,11 +197,11 @@ class StreamAction(Action):
 
 
 class InputAction(BasicAction):
-    class Head(struct_model.StructModel):
-        message_id: struct_model.uInt2
-        data_type: struct_model.uInt1
-        compression: struct_model.uInt1
-        data_len: struct_model.uInt4
+    class Head(StructModel):
+        message_id: uInt2
+        data_type: uInt1
+        compressor: uInt1
+        data_len: uInt4
 
     @classmethod
     async def init(cls, conn: Connection) -> 'InputAction': ...
@@ -205,15 +211,15 @@ class InputAction(BasicAction):
 
     async def send(self, conn: Connection) -> None: ...
 
-    async def reply(self, data=None, data_type: int = None, compression: int = None, *,
+    async def reply(self, data=None, data_type: int = None, compressor: Selector = None, *,
                     headers: T_Headers = None, status: int = None) -> ActionLike | None: ...
 
     async def cancel(self) -> ActionLike | None: ...
 
 
 class DownloadSpeedAction(BaseAction):
-    class Head(struct_model.StructModel):
-        speed: struct_model.uInt4
+    class Head(StructModel):
+        speed: uInt4
 
     def __init__(self, speed: int):
         super().__init__()
@@ -231,8 +237,8 @@ class DownloadSpeedAction(BaseAction):
 
 
 class CancelInputAction(BaseAction):
-    class Head(struct_model.StructModel):
-        message_id: struct_model.uInt2
+    class Head(StructModel):
+        message_id: uInt2
 
     @classmethod
     async def init(cls, conn: Connection) -> 'CancelInputAction': ...
@@ -244,8 +250,8 @@ class CancelInputAction(BaseAction):
 
 
 class PingAction(BaseAction):
-    class Head(struct_model.StructModel):
-        send_time: struct_model.uInt8
+    class Head(StructModel):
+        send_time: uInt8
 
     def __init__(self, send_time: int = None):
         super().__init__()
@@ -259,5 +265,39 @@ class PingAction(BaseAction):
     async def _recv_head(cls, conn: Connection) -> 'PingAction.Head': ...
 
     async def send(self, conn: Connection) -> None: ...
+
+    def __repr__(self) -> str: ...
+
+
+class StartEncryptionAction(BaseAction):
+    __slots__ = ('cypher_type', 'exchange_type', 'public_key')
+    type_id = b'\xF0'
+
+    class Head(StructModel):
+        cypher_type: uInt1
+        exchange_type: uInt1
+        length: uInt4
+
+    def __init__(self, cypher_type: int, exchange_type: int, public_key: bytes):
+        super().__init__()
+        self.cypher_type: int = cypher_type
+        self.exchange_type: int = exchange_type
+        self.public_key: bytes = public_key
+
+    @classmethod
+    async def init(cls, conn) -> 'StartEncryptionAction': ...
+
+    async def send(self, conn) -> None: ...
+
+    def __repr__(self) -> str: ...
+
+
+class StopEncryptionAction(BaseAction):
+    type_id = b'\xF1'
+
+    @classmethod
+    async def init(cls, conn) -> 'StopEncryptionAction': ...
+
+    async def send(self, conn) -> None: ...
 
     def __repr__(self) -> str: ...

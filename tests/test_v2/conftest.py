@@ -1,50 +1,44 @@
-import asyncio
-import logging
-import platform
-
-import uvloop
 from pytest import fixture
 
-from cats.v2 import Auth, Handshake, SHA256TimeHandshake
-from cats.v2.server import Api, Middleware, default_error_handler
-
-logging.basicConfig(level='DEBUG', force=True)
-
-
-@fixture(scope='session')
-def event_loop():
-    if platform.system() == 'Windows':
-        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-    else:
-        uvloop.install()
-    yield asyncio.new_event_loop()
+from cats.v2.options import Options
+from cats.v2.compressors import GzipCompressor, ZlibCompressor
+from cats.v2.scheme import JSON
+from cats.v2.utils import temp_file
 
 
-@fixture(scope='session')
-def cats_handshake() -> Handshake:
-    yield SHA256TimeHandshake(b'secret_key', 1)
+@fixture
+def headers():
+    yield {}
 
 
-@fixture(scope='session')
-def cats_apis() -> list[Api]:
-    from tests.test_v2.handlers import api
-    yield [
-        api,
-    ]
+@fixture
+def options():
+    yield Options(
+        scheme=JSON,
+        allowed_compressors=[GzipCompressor.type_id, ZlibCompressor.type_id],
+        default_compressor=ZlibCompressor.type_id,
+    )
 
 
-@fixture(scope='session')
-def cats_middleware() -> list[Middleware]:
-    return [
-        default_error_handler,
-    ]
+@fixture
+def test_file():
+    with temp_file() as file:
+        with file.open('w') as _fh:
+            _fh.write('Hello world!')
+        yield file
 
 
-@fixture(scope='session')
-def cats_api_version() -> int:
-    yield 1
+@fixture
+def test_file2():
+    with temp_file() as file:
+        with file.open('w') as _fh:
+            _fh.write('Welcome back!')
+        yield file
 
 
-@fixture(scope='session')
-def cats_auth() -> Auth | None:
-    yield None
+@fixture
+def test_file3():
+    with temp_file() as file:
+        with file.open('wb') as _fh:
+            _fh.write(bytes(10240))
+        yield file

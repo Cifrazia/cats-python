@@ -1,8 +1,7 @@
 import asyncio
 import inspect
 
-from cats.v2 import Config
-from cats.v2.action import Action
+from cats.v2 import Action, Config
 from cats.v2.client import Connection as BaseConn
 
 __all__ = [

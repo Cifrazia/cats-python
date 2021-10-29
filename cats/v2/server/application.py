@@ -1,6 +1,6 @@
 from collections import defaultdict
 from functools import partial
-from typing import Awaitable, Iterable, Type
+from typing import Awaitable, Iterable
 
 from cats.v2.action import ActionLike
 from cats.v2.auth import Auth
@@ -18,7 +18,7 @@ class Application:
     __slots__ = ('config', 'auth', 'ConnectionClass', '_handlers', '_channels', '_runner')
 
     def __init__(self, apis: list[Api], middleware: list[Middleware] = None, *,
-                 auth: Auth = None, config: Config = None, connection: Type[Connection] = None):
+                 auth: Auth = None, config: Config = None, connection: type[Connection] = None):
         self.config = Config() if config is None else config
         self.auth = Auth([]) if auth is None else auth
         self.ConnectionClass = connection

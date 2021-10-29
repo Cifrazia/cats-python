@@ -5,10 +5,9 @@ from time import time
 from pytest import mark, raises
 from tornado.iostream import StreamClosedError
 
-from cats import tmp_file
-from cats.v2 import Action, FileInfo, InputAction, StreamAction
+from cats.v2 import Action, FileInfo, InputAction, StreamAction, temp_file
 from cats.v2.client import Connection
-from .handlers import *
+from tests.test_v2.handlers import *
 
 
 @mark.asyncio
@@ -20,12 +19,12 @@ async def test_echo_handler(cats_conn: Connection):
 
 @mark.asyncio
 async def test_echo_handler_files(cats_conn: Connection):
-    payload = tmp_file()
-    response = await cats_conn.send(EchoHandler.handler_id, payload)
-    assert isinstance(response.data, dict)
-    for key, val in response.data.items():
-        assert isinstance(key, str)
-        assert isinstance(val, FileInfo)
+    with temp_file() as payload:
+        response = await cats_conn.send(EchoHandler.handler_id, payload)
+        assert isinstance(response.data, dict)
+        for key, val in response.data.items():
+            assert isinstance(key, str)
+            assert isinstance(val, FileInfo)
 
 
 @mark.asyncio
@@ -130,24 +129,24 @@ async def test_api_speed_limiter(cats_conn: Connection):
 
 @mark.asyncio
 async def test_api_payload_offset(cats_conn: Connection):
-    payload = os.urandom(10)
-    response = await cats_conn.send(EchoHandler.handler_id, payload, headers={"Offset": 5})
-    assert response.data == b''
+    payload = b'1234567890'
+    response = await cats_conn.send(EchoHandler.handler_id, payload, headers={"Skip": 5})
+    assert response.data == b'67890'
 
 
 @mark.asyncio
 async def test_api_payload_offset_files(cats_conn: Connection):
-    payload = tmp_file()
-    with payload.open('wb') as fh:
-        fh.write(b'1234567890')
+    with temp_file() as payload:
+        with payload.open('wb') as fh:
+            fh.write(b'1234567890')
 
-    response = await cats_conn.send(EchoHandler.handler_id, payload, headers={"Offset": 5})
-    assert isinstance(response.data, dict)
-    for key, val in response.data.items():
-        assert isinstance(key, str)
-        assert isinstance(val, FileInfo)
-        assert val.size == 0
-        assert val.path.read_bytes() == b''
+        response = await cats_conn.send(EchoHandler.handler_id, payload, headers={"Skip": 5})
+        assert isinstance(response.data, dict)
+        for key, val in response.data.items():
+            assert isinstance(key, str)
+            assert isinstance(val, FileInfo)
+            assert val.size == 5
+            assert val.path.read_bytes() == b'67890'
 
 
 @mark.asyncio

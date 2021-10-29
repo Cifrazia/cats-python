@@ -1,11 +1,17 @@
 [run]
 branch = True
 source = cats
+command_line = -m pytest
+omit =
+  */__main__.py
 
 [report]
+fail_under = 80.0
 show_missing = True
 
 exclude_lines =
+    class .*Error\):
+    class .*Exception\):
     raise AssertionError.*
     raise NotImplementedError.*
     except.*KeyboardInterrupt.*
@@ -15,3 +21,6 @@ exclude_lines =
     pass
     if 0:
     if __name__ == .__main__.:
+
+[html]
+title = cats-python | coverage

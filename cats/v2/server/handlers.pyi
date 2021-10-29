@@ -1,13 +1,15 @@
 from collections import defaultdict
 from dataclasses import dataclass
 from logging import getLogger
-from typing import Awaitable, Type
+from typing import Awaitable
 
-from cats.identity import Identity, IdentityObject
-from cats.plugins import Form, Scheme
-from cats.types import Json, T_Headers
 from cats.v2.action import Action, ActionLike, InputAction
+from cats.v2.forms import FormType, SubForms
+from cats.v2.headers import T_Headers
+from cats.v2.identity import Identity, IdentityObject
+from cats.v2.registry import Selector
 from cats.v2.server import Connection
+from cats.v2.types import Data
 
 __all__ = [
     'HandlerItem',
@@ -22,7 +24,7 @@ logging = getLogger('CATS')
 class HandlerItem(object):
     id: int
     name: str
-    handler: Type['Handler']
+    handler: type['Handler']
     version: int | None = None
     end_version: int | None = None
 
@@ -47,8 +49,8 @@ class Handler:
     __slots__ = ('action',)
     handler_id: int
 
-    Loader: Scheme | None = None
-    Dumper: Scheme | None = None
+    Loader: FormType | None = None
+    Dumper: FormType | None = None
 
     data_type: int | tuple[int] | None = None
     min_data_len: int | None = None
@@ -81,7 +83,7 @@ class Handler:
     async def handle(self):
         raise NotImplementedError
 
-    async def json_load(self, *, many: bool = False, plain: bool = False) -> Json | Form: ...
+    async def json_load(self, *, many: bool = False, plain: bool = False) -> Data | SubForms: ...
 
     async def json_dump(self, data, *, headers: T_Headers = None,
                         status: int = 200, many: bool = None, plain: bool = False) -> ActionLike: ...
@@ -89,7 +91,7 @@ class Handler:
     @property
     def identity(self) -> Identity | IdentityObject | None: ...
 
-    def ask(self, data=None, data_type: int = None, compression: int = None, *,
+    def ask(self, data=None, data_type: int = None, compressor: Selector = None, *,
             headers: T_Headers = None, status: int = 200,
             bypass_limit=False, bypass_count=False, timeout=None) -> Awaitable['InputAction']: ...
 
