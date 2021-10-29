@@ -31,10 +31,10 @@ jobs:
       - name: Test with pytest + generate coverage
         shell: bash
         run: |
-          poetry run pytest -s -rf -vv --log-level=debug --cov-config=.coveragerc --cov cats tests
-          poetry run python -m coverage xml -i
+          poetry run python -m coverage run || exit $?
           poetry run python -m coverage html -i
           poetry run python -m coverage report > coverage.txt
+          cat coverage.txt
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v2
         with:
