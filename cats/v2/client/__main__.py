@@ -1,3 +1,9 @@
+from tornado.iostream import StreamClosedError
+
+from cats.errors import HandshakeError, ProtocolError
+from cats.v2.action import PingAction
+
+
 async def main(host: str, port: int,
                handshake: bytes | None,
                api: int,
@@ -28,21 +34,17 @@ async def main(host: str, port: int,
         ssl_options.verify_mode = CERT_REQUIRED
         ssl_options.load_default_certs()
 
-    await conn.connect(host, port, ssl_options=ssl_options)
-
-    while True:
-        handler_id = input('Handler ID: ').strip()
-        if not handler_id:
-            break
-        base = 16 if (pref := handler_id[:2]) == '0x' else 8 if pref == '0o' else 2 if pref == '0b' else 10
-        handler_id = int(handler_id, base)
-        if handler_id < 0 or handler_id > 0x7FFF:
-            print('Invalid handler_id')
-            break
-
-        data = input('Message: ')
-        result = await conn.send(handler_id, data)
-        print(f'{result = }')
+    try:
+        await conn.connect(host, port, ssl_options=ssl_options)
+        await PingAction().send(conn)
+        exit(int(not conn.is_open))
+    except (HandshakeError, ProtocolError):
+        exit(0)
+    except StreamClosedError:
+        exit(1)
+    except Exception:
+        exit(500)
+        raise
 
 
 if __name__ == '__main__':

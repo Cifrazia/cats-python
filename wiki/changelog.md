@@ -13,7 +13,15 @@ Expected: Q1 2022
 
 - [ ] Added different scheme language support: YAML, TOML
 
-## `4.5.6` [!badge variant="info" text="LATEST"]
+## `4.5.7` [!badge variant="info" text="LATEST"]
+
+Released: 2021-11-04
+
+### Changed
+
+- [x] `cats.v2.client` module now works as healthcheck
+
+## `4.5.6`
 
 Released: 2021-09-18
 
