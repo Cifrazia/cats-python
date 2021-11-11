@@ -13,7 +13,13 @@ Expected: Q1 2022
 
 - [ ] Added different scheme language support: YAML, TOML
 
-## `4.5.7` [!badge variant="info" text="LATEST"]
+## `4.5.8` [!badge variant="info" text="LATEST"]
+
+Released: 2021-11-12
+
+- [x] Temporarily replaced `sentry_sdk` with `rollbar`
+
+## `4.5.7`
 
 Released: 2021-11-04
 

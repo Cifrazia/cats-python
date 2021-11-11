@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from logging import Logger
 from typing import TypeVar
 
-import sentry_sdk
+import rollbar
 from tornado.iostream import IOStream
 
 from cats.errors import ProtocolError
@@ -27,7 +27,6 @@ class Connection:
     """
     __slots__ = (
         'download_speed',
-        'scope',
         'input_pool',
         'send_queue',
         'send_task',
@@ -58,7 +57,6 @@ class Connection:
     def __init__(self, conf: Config):
         self.conf: Config = conf
         self.download_speed: int = 0
-        self.scope: sentry_sdk.Scope = sentry_sdk.Scope()
         self.input_pool: dict[int, Input] = {}
         self.send_queue: asyncio.Queue = asyncio.Queue()
         self.send_task: asyncio.Task | None = None
@@ -134,7 +132,7 @@ class Connection:
         except self.conf.ignore_errors as err:
             self.close(err)
         except Exception as err:
-            sentry_sdk.capture_exception(err, scope=self.scope)
+            rollbar.report_exc_info(extra_data=self.identity_scope_user)  # FIXME: Use plugins/middleware for this
             self.close(err)
 
     def on_tick_done(self, task):
@@ -249,12 +247,6 @@ class Connection:
         self._identity: Identity | None = identity
         self._credentials = credentials
 
-        self.scope.set_user(self.identity_scope_user)
-        sentry_sdk.add_breadcrumb(message='Sign in', data={
-            'id': identity.id,
-            'model': identity.__class__.__name__,
-            'instance': repr(identity),
-        })
         self.prolong_identity(timeout)
 
         self.debug(f'Signed in as {self.identity_scope_user} <{self.host}:{self.port}>')
@@ -281,8 +273,6 @@ class Connection:
         self.prolong_identity(None)
         self._identity = None
         self._credentials = None
-        self.scope.set_user(self.identity_scope_user)
-        sentry_sdk.add_breadcrumb(message='Sign out')
         self.debug(f'Signed out from {self.identity_scope_user} <{self.host}:{self.port}>')
 
     def close(self, exc: BaseException = None) -> None:
@@ -298,7 +288,6 @@ class Connection:
         self.sign_out()
         if exc and not isinstance(exc, self.conf.ignore_errors):
             self.logging.error(f'{exc.__class__.__qualname__} {exc}')
-            sentry_sdk.capture_exception(exc, scope=self.scope)
         self._stream.close(exc)
         for task in self._close_tasks():
             if task is None:

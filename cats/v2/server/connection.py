@@ -5,7 +5,7 @@ from random import randint
 from time import time_ns
 from typing import Iterable
 
-import sentry_sdk
+import rollbar
 from tornado.iostream import IOStream
 
 from cats.errors import ProtocolError
@@ -110,8 +110,8 @@ class Connection(BaseConnection):
                         await result.send(self)
                 except action.conn.conf.ignore_errors:
                     raise
-                except Exception as err:
-                    sentry_sdk.capture_exception(err, scope=self.scope)
+                except Exception:
+                    rollbar.report_exc_info(extra_data=self.identity_scope_user)
                     raise
 
     def dispatch(self, handler_id):

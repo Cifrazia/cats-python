@@ -3,8 +3,6 @@ import inspect
 from collections import defaultdict
 from typing import Any, Type
 
-import sentry_sdk
-
 from cats.errors import CatsError
 from cats.identity import IdentityObject
 from cats.utils import require
@@ -43,7 +41,6 @@ class Auth:
             self.methods[frozenset(params)].append(method)
 
     async def sign_in(self, **kwargs) -> tuple[IdentityObject, Any, int | float | None]:
-        sentry_sdk.add_breadcrumb(message=f'Attempt to sign in', data=kwargs)
         prev_err = None
         for method in self.methods.get(frozenset(kwargs.keys()), []):
             try:

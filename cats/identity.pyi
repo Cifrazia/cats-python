@@ -15,6 +15,7 @@ class Identity:
     def model_name(self) -> int:
         raise NotImplementedError
 
+    # Rename to excerpt -> dict[str]
     @property
     def sentry_scope(self) -> dict:
         raise NotImplementedError
