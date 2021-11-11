@@ -4,7 +4,7 @@ from typing import Generator, Iterable
 
 from struct_model import StructModel, uInt8
 
-from cats.v2.actions.base import Action
+from cats.v2.actions.base import BaseAction
 from cats.v2.errors import InterfaceViolation
 
 __all__ = [
@@ -12,7 +12,7 @@ __all__ = [
 ]
 
 
-class PingAction(Action):
+class PingAction(BaseAction):
     __slots__ = ('recv_time', 'send_time')
     type_id = 0xFF
     type_name = 'Ping'
@@ -26,7 +26,7 @@ class PingAction(Action):
         self.send_time = send_time or self.recv_time
 
     @classmethod
-    def from_buffer(cls) -> Generator[bytes, int, 'Action']:
+    def from_buffer(cls) -> Generator[bytes, int, 'BaseAction']:
         buff = yield cls.Head.struct.size
         head: cls.Head = cls.Head.unpack(buff)
         action = cls(**head.dict())

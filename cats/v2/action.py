@@ -29,9 +29,6 @@ __all__ = [
     'StopEncryptionAction',
 ]
 
-MAX_IN_MEMORY = 1 << 24
-MAX_CHUNK_READ = 1 << 20
-
 ActionLike: TypeAlias = TypeVar('ActionLike', bound='Action')
 
 
@@ -188,7 +185,7 @@ class BaseAction(dict):
 
     async def dump_data(self, size: int) -> None:
         while size > 0:
-            size -= len(await self.conn.read(min(size, MAX_CHUNK_READ), partial=True))
+            size -= len(await self.conn.read(min(size, self.conf.max_chunk_read), partial=True))
         self.conn.lock_read.release()
 
     async def send(self, conn) -> None:
@@ -223,10 +220,10 @@ class BasicAction(BaseAction, abstract=True):
         raise NotImplementedError
 
     async def recv_data(self):
-        if self.data_len > MAX_IN_MEMORY:
+        if self.data_len > self.conf.max_in_memory:
             if FileCodec != self.data_type:
                 raise ProtocolViolation(f'Attempted to send message larger than '
-                                        f'{format_amount(MAX_IN_MEMORY)}', conn=self.conn)
+                                        f'{format_amount(self.conf.max_in_memory)}', conn=self.conn)
             await self._recv_large_data()
         else:
             await self._recv_small_data()
@@ -264,7 +261,7 @@ class BasicAction(BaseAction, abstract=True):
             src.unlink(missing_ok=True)
 
     async def _recv_chunk(self, left):
-        chunk = await self.conn.read(min(left, MAX_CHUNK_READ), partial=True)
+        chunk = await self.conn.read(min(left, self.conf.max_chunk_read), partial=True)
         self.conn.debug(f'[RECV {self.conn.address}] [{int2hex(self.message_id):<4}] <- {bytes2hex(chunk[:64])}...')
         left -= len(chunk)
         return chunk, left
@@ -301,7 +298,7 @@ class BasicAction(BaseAction, abstract=True):
             left = len(data)
 
         try:
-            max_chunk_size = min(MAX_IN_MEMORY, conn.options.download_speed) or MAX_IN_MEMORY
+            max_chunk_size = min(self.conf.max_in_memory, conn.options.download_speed) or self.conf.max_in_memory
             delay = Delay(conn.options.download_speed)
             while left > 0:
                 size = min(left, max_chunk_size)
@@ -451,7 +448,7 @@ class StreamAction(Action):
         try:
             with buff.open('wb') as fh:
                 while chunk_size := from_uint(await self.conn.read(4)):
-                    if chunk_size > MAX_IN_MEMORY:
+                    if chunk_size > self.conf.max_in_memory:
                         data_len += await self._recv_large_chunk(fh, chunk_size)
                     else:
                         data_len += await self._recv_small_chunk(fh, chunk_size)
@@ -477,14 +474,14 @@ class StreamAction(Action):
         try:
             with part.open('wb') as tmp:
                 while left > 0:
-                    chunk = await conn.read(min(left, MAX_CHUNK_READ), partial=True)
+                    chunk = await conn.read(min(left, self.conf.max_chunk_read), partial=True)
                     conn.debug(f'[RECV {conn.address}] [{int2hex(self.message_id):<4}] <- {bytes2hex(chunk[:64])}...')
                     left -= len(chunk)
                     tmp.write(chunk)
             await self.conf.compressors.decompress_file(self.compressor, part, dst, self.headers, conn.options)
             data_len = dst.stat().st_size
             with dst.open('rb') as tmp:
-                while i := tmp.read(MAX_IN_MEMORY):
+                while i := tmp.read(self.conf.max_in_memory):
                     fh.write(i)
             return data_len
         finally:
@@ -495,7 +492,7 @@ class StreamAction(Action):
         left = chunk_size
         part = bytearray()
         while left > 0:
-            chunk = await self.conn.read(min(left, MAX_CHUNK_READ), partial=True)
+            chunk = await self.conn.read(min(left, self.conf.max_chunk_read), partial=True)
             self.conn.debug(f'[RECV {self.conn.address}] [{int2hex(self.message_id):<4}] <- {bytes2hex(chunk[:64])}...')
             left -= len(chunk)
             part += chunk
@@ -551,7 +548,7 @@ class StreamAction(Action):
             if not isinstance(chunk, Bytes):
                 raise MalformedData('Provided data chunk is not binary', data=self.data)
 
-            chunk = await compressor.compress(chunk, self.headers, self.conn.options)
+            chunk = await compressor.compress(chunk, self.headers)
             chunk_size = len(chunk)
             if chunk_size >= 1 << 32:
                 raise MalformedData('Provided data chunk exceeded max chunk size', data=self.data)
@@ -563,7 +560,7 @@ class StreamAction(Action):
         await conn.write(b'\x00\x00\x00\x00')
 
     async def _async_gen(self, gen, chunk_size):
-        size = max(chunk_size, MAX_IN_MEMORY) or MAX_IN_MEMORY
+        size = max(chunk_size, self.conf.max_in_memory) or self.conf.max_in_memory
         if hasattr(gen, '__iter__'):
             for item in gen:
                 for i in range(math.ceil(len(item) / size)):

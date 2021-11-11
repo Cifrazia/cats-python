@@ -1,16 +1,16 @@
 from abc import ABC
 from enum import IntEnum
-from io import BytesIO
 from pathlib import Path
 from time import time_ns
-from typing import Generator, Iterable
+from typing import BinaryIO, Generator, Iterable
 
 from struct_model import StructModel, uInt1, uInt4, uInt8
 
+from cats.v2.connection import Connection
 from cats.v2.registry import Item
 
 __all__ = [
-    'Action',
+    'BaseAction',
 ]
 
 
@@ -20,16 +20,18 @@ class State(IntEnum):
     compiled = 2
 
 
-class Action(Item, ABC):
+class BaseAction(Item, ABC):
     __slots__ = (
         'state',
         'compiled',
         'meta',
+        'conn',
     )
-    MAX_IN_MEMORY = 1 << 24
-    MAX_CHUNK_READ = 1 << 20
+    type_name: str = 'BaseAction'
+    MAX_IN_MEMORY: int = 64 * 1024 * 1024
+    MAX_CHUNK_READ: int = 16 * 1024 * 1024
 
-    def __init__(self, meta: 'Action.Meta' = None):
+    def __init__(self, meta: 'BaseAction.Meta' = None):
         self.state: State = State.raw
         if meta is None:
             meta = self.Meta(
@@ -38,12 +40,16 @@ class Action(Item, ABC):
                 times_used=0,
             )
         self.meta = meta
-        self.compiled: BytesIO | None = None
+        self.compiled: BinaryIO | None = None
+        self.conn: Connection
 
     @classmethod
-    def from_buffer(cls) -> Generator[bytes, int, 'Action']:
+    def from_buffer(cls) -> Generator[bytes, int | bytes, 'BaseAction']:
         """
-        Will yield amount of bytes to read, should accept bytes of requested length
+        Will yield amount of bytes to read or byte-string stopper,
+        should accept bytes that either:
+            - sized with requested length
+            - end with requested stopper.
         :return:
         """
         raise NotImplementedError
@@ -73,7 +79,7 @@ class Action(Item, ABC):
         raise NotImplementedError
 
     @classmethod
-    async def load(cls, filename: str | Path) -> 'Action':
+    async def load(cls, filename: str | Path) -> 'BaseAction':
         """
         Read `.cats` file, load META to __init__, put descriptor to _compiled section and set state to Compiled
         :param filename:
@@ -81,7 +87,7 @@ class Action(Item, ABC):
         """
         compiled = open(filename, 'rb+')
         meta = compiled.read(cls.Meta.struct.size)
-        action = cls(cls.Meta.loads(meta))
+        action = cls(meta=cls.Meta.loads(meta))
         action.meta.times_used += 1
         compiled.seek(0)
         compiled.write(action.meta.pack())

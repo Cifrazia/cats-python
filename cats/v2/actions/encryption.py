@@ -3,7 +3,7 @@ from typing import Generator, Iterable
 
 from struct_model import StructModel, uInt1, uInt4
 
-from cats.v2.actions.base import Action
+from cats.v2.actions.base import BaseAction
 from cats.v2.errors import InterfaceViolation
 
 __all__ = [
@@ -12,7 +12,7 @@ __all__ = [
 ]
 
 
-class StartEncryptionAction(Action):
+class StartEncryptionAction(BaseAction):
     __slots__ = ('cypher_type', 'exchange_type', 'public_key')
     type_id = 0xF0
     type_name = 'StartEncryption'
@@ -22,7 +22,7 @@ class StartEncryptionAction(Action):
         exchange_type: uInt1
         length: uInt4
 
-    def __init__(self, cypher_type: int, exchange_type: int, public_key: bytes, meta: 'Action.Meta' = None):
+    def __init__(self, cypher_type: int, exchange_type: int, public_key: bytes, meta: 'BaseAction.Meta' = None):
         super().__init__(meta)
         self.cypher_type: int = cypher_type
         self.exchange_type: int = exchange_type
@@ -48,7 +48,7 @@ class StartEncryptionAction(Action):
         raise InterfaceViolation('Cannot store "StartEncryptionAction"')
 
 
-class StopEncryptionAction(Action):
+class StopEncryptionAction(BaseAction):
     type_id = 0xF1
     type_name = 'StopEncryption'
 

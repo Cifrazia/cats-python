@@ -1,4 +1,4 @@
-from cats.v2.actions.base import Action
+from cats.v2.actions.base import BaseAction
 from cats.v2.registry import Registry, Selector
 
 __all__ = [
@@ -7,7 +7,7 @@ __all__ = [
 
 
 class ActionAPI(Registry):
-    item_type = Action
+    item_type = type[BaseAction]
 
     def get_action_name(self, action_id: Selector, default: str = 'unknown') -> str:
         """

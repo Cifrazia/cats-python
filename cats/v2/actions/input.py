@@ -3,7 +3,8 @@ from typing import Generator, Iterable
 
 from struct_model import StructModel, uInt1, uInt2, uInt4
 
-from cats.v2.actions.base import Action
+from cats.v2 import format_amount, int2hex
+from cats.v2.actions.base import BaseAction
 from cats.v2.errors import InterfaceViolation
 
 __all__ = [
@@ -12,9 +13,12 @@ __all__ = [
 ]
 
 
-class InputAction(Action):
+class InputAction(BaseAction):
     type_id = 0x02
     type_name = 'Input'
+
+    def __init__(self, meta: 'BaseAction.Meta' = None):
+        super().__init__(meta)
 
     class Head(StructModel):
         message_id: uInt2
@@ -23,12 +27,21 @@ class InputAction(Action):
         data_len: uInt4
 
     @classmethod
-    def from_buffer(cls) -> Generator[bytes, int, 'Action']:
+    def from_buffer(cls) -> Generator[bytes, int, 'BaseAction']:
         buff = yield cls.Head.struct.size
         head: cls.Head = cls.Head.unpack(buff)
         left = head.data_len
         while left > 0:
-            buff = yield min(cls.MAX_CHUNK_READ)
+            buff = yield cls.MAX_CHUNK_READ
+
+    def __iter__(self) -> Iterable[bytes]:
+        pass
+
+    async def prepare(self) -> None:
+        pass
+
+    async def store(self, filename: str | Path = None, ttl: int = 0) -> Path:
+        raise InterfaceViolation('Cannot store "InputAction"')
 
     @classmethod
     async def _recv_head(cls, conn):
@@ -79,7 +92,7 @@ class InputAction(Action):
         return await self.conn.recv(self.message_id)  # noqa
 
 
-class CancelInputAction(Action):
+class CancelInputAction(BaseAction):
     __slots__ = ('message_id',)
     type_id = 0x06
     type_name = 'CancelInput'
@@ -92,7 +105,7 @@ class CancelInputAction(Action):
         self.message_id = message_id
 
     @classmethod
-    def from_buffer(cls) -> Generator[bytes, int, 'Action']:
+    def from_buffer(cls) -> Generator[bytes, int, 'BaseAction']:
         buff = yield cls.Head.struct.size
         head: cls.Head = cls.Head.unpack(buff)
         action = cls(**head.dict())
