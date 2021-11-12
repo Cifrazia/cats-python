@@ -1,6 +1,7 @@
 import asyncio
 from contextlib import asynccontextmanager
 from logging import Logger
+from traceback import format_tb
 from typing import TypeVar
 
 import rollbar
@@ -287,7 +288,7 @@ class Connection:
         self._closed = True
         self.sign_out()
         if exc and not isinstance(exc, self.conf.ignore_errors):
-            self.logging.error(f'{exc.__class__.__qualname__} {exc}')
+            self.logging.error(f'{exc.__class__.__qualname__} {exc}\n{format_tb(exc.__traceback__)}')
         self._stream.close(exc)
         for task in self._close_tasks():
             if task is None:

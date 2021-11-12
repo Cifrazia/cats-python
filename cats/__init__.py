@@ -4,4 +4,4 @@ from .plugins import *
 from .types import *
 from .utils import *
 
-version = (4, 5, 7)
+version = (4, 5, 9)

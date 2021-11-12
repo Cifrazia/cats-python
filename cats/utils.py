@@ -1,12 +1,12 @@
 import asyncio
 import importlib
+import math
 import re
 import tempfile
 from logging import getLogger
 from pathlib import Path
 from time import time
 
-import math
 import ujson
 
 from cats.types import Bytes, Json
@@ -180,7 +180,10 @@ def filter_json(json: Json | Bytes, max_len: int = 16, max_size: int = 64, inden
 def _filter_json_part(json: Json, max_len: int = 16, max_size: int = 64) -> Json:
     if isinstance(json, dict):
         return {
-            k: '<masked>' if _HIDE.match(k) else _filter_json_part(v, max_len, max_size)
+            k:
+                '<masked>' if (isinstance(k, str) and _HIDE.match(k))
+                else v if str(k).lower() in ('error', 'exception')
+                else _filter_json_part(v, max_len, max_size)
             for k, v in (*tuple(json.items())[:max_size], ('<more>', f'{len(json) - max_len} items'))[:len(json)]
         }
     if isinstance(json, list):

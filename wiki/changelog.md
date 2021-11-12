@@ -13,7 +13,17 @@ Expected: Q1 2022
 
 - [ ] Added different scheme language support: YAML, TOML
 
-## `4.5.8` [!badge variant="info" text="LATEST"]
+## `4.5.9` [!badge variant="info" text="LATEST"]
+
+Released: 2021-11-12
+
+### Fixed
+
+- [x] Fixed JSON filtered out errors, which is not cool at all
+- [x] Fixed exceptions passed in conn.close() were not printing traceback
+- [x] Fixed package version in `cats.__init__`
+
+## `4.5.8`
 
 Released: 2021-11-12
 
