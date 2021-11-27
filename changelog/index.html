@@ -26,10 +26,11 @@
     <script>(function () { var el = document.documentElement, m = localStorage.getItem("/cats-python/doc_theme"), wm = window.matchMedia; if (m === "dark" || (!m && wm && wm("(prefers-color-scheme: dark)").matches)) { el.classList.add("dark") } else { el.classList.remove("dark") } })();</script>
 
     <link href="/cats-python/img/favicon.png" rel="icon" />
-    <link href="/cats-python/resources/css/retype.css?v=1.10.690020588153" rel="stylesheet" data-turbo-track="reload" />
+    <link href="/cats-python/resources/css/retype.css?v=1.11.691347896631" rel="stylesheet" data-turbo-track="reload" />
 
-    <script type="text/javascript" src="/cats-python/resources/js/config.js?v=1.10.690020588153" defer data-turbo-track="reload"></script>
-    <script type="text/javascript" src="/cats-python/resources/js/retype.js?v=1.10" defer data-turbo-track="reload"></script>
+    <script type="text/javascript" src="/cats-python/resources/js/config.js?v=1.11.691347896631" defer data-turbo-track="reload"></script>
+    <script type="text/javascript" src="/cats-python/resources/js/retype.js?v=1.11" defer data-turbo-track="reload"></script>
+    <script id="lunr-js" type="text/javascript" src="/cats-python/resources/js/lunr.js?v=1.11.691347896631" defer></script>
 </head>
     <body>
         <div id="docs-app" class="relative text-base antialiased text-gray-700 bg-white font-body dark:bg-dark-850 dark:text-dark-300">
@@ -85,7 +86,7 @@
                     </div>
 
                     <input class="w-full h-10 transition-colors duration-200 ease-in bg-gray-200 border border-transparent rounded md:text-sm hover:bg-white hover:border-gray-300 focus:outline-none focus:bg-white focus:border-gray-500 dark:bg-dark-600 dark:border-dark-600 placeholder-gray-400 dark:placeholder-dark-400"
-                    style="padding: 0.625rem 0.75rem 0.625rem 2rem" type="text" placeholder="Search docs" />
+                    style="padding: 0.625rem 0.75rem 0.625rem 2rem" type="text" placeholder="Search" />
                 </div>
 
                 <!-- Mobile search button mock -->
@@ -132,9 +133,10 @@
         <div class="w-40 h-3 mb-4 bg-gray-200 rounded-full loading dark:bg-dark-600"></div>
     </div>
 
+
     <div class="flex-shrink-0 mt-auto bg-transparent dark:border-dark-650">
         <a
-    class="flex items-center justify-center flex-nowrap h-16 text-gray-400 dark:text-dark-400 hover:text-gray-700 dark:hover:text-dark-300 transition-colors duration-150 ease-in"
+    class="flex items-center justify-center flex-nowrap h-16 text-gray-400 dark:text-dark-400 hover:text-gray-700 dark:hover:text-dark-300 transition-colors duration-150 ease-in docs-powered-by"
     target="_blank"
     href="https://retype.com/"
     rel="noopener"
@@ -172,8 +174,9 @@
                 </nav>
             </div>
 
+
             <a
-    class="flex items-center justify-center flex-nowrap h-16 text-gray-400 dark:text-dark-400 hover:text-gray-700 dark:hover:text-dark-300 transition-colors duration-150 ease-in"
+    class="flex items-center justify-center flex-nowrap h-16 text-gray-400 dark:text-dark-400 hover:text-gray-700 dark:hover:text-dark-300 transition-colors duration-150 ease-in docs-powered-by"
     target="_blank"
     href="https://retype.com/"
     rel="noopener"
@@ -224,12 +227,28 @@ to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
 <ul class="contains-task-list">
 <li class="task-list-item"><input disabled="disabled" type="checkbox" /> Added different scheme language support: YAML, TOML</li>
 </ul>
-<doc-anchor-target id="459-">
+<doc-anchor-target id="4510-">
     <h2>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#459-">#</doc-anchor-trigger>
-        <span><code v-pre>4.5.9</code> <span class="no-link inline-flex items-center justify-center font-medium leading-none whitespace-nowrap text-blue-500 dark:text-blue-400 border border-blue-500 dark:border-blue-400 h-6 px-2 text-xs rounded-md">
+        <doc-anchor-trigger class="header-anchor-trigger" to="#4510-">#</doc-anchor-trigger>
+        <span><code v-pre>4.5.10</code> <span class="no-link inline-flex items-center justify-center font-medium leading-none whitespace-nowrap text-blue-500 dark:text-blue-400 border border-blue-500 dark:border-blue-400 h-6 px-2 text-xs rounded-md">
             <span>LATEST</span>
         </span></span>
+    </h2>
+</doc-anchor-target>
+<p>Released: 2021-11-21</p>
+<doc-anchor-target id="changed">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#changed">#</doc-anchor-trigger>
+        <span>Changed</span>
+    </h3>
+</doc-anchor-target>
+<ul class="contains-task-list">
+<li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> Updated packages</li>
+</ul>
+<doc-anchor-target id="459">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#459">#</doc-anchor-trigger>
+        <span><code v-pre>4.5.9</code></span>
     </h2>
 </doc-anchor-target>
 <p>Released: 2021-11-12</p>
@@ -261,9 +280,9 @@ to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
     </h2>
 </doc-anchor-target>
 <p>Released: 2021-11-04</p>
-<doc-anchor-target id="changed">
+<doc-anchor-target id="changed-1">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#changed">#</doc-anchor-trigger>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#changed-1">#</doc-anchor-trigger>
         <span>Changed</span>
     </h3>
 </doc-anchor-target>
@@ -319,9 +338,9 @@ to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
     </h2>
 </doc-anchor-target>
 <p>Released: 2021-09-17</p>
-<doc-anchor-target id="changed-1">
+<doc-anchor-target id="changed-2">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#changed-1">#</doc-anchor-trigger>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#changed-2">#</doc-anchor-trigger>
         <span>Changed</span>
     </h3>
 </doc-anchor-target>
@@ -335,9 +354,9 @@ to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
     </h2>
 </doc-anchor-target>
 <p>Released: 2021-09-17</p>
-<doc-anchor-target id="changed-2">
+<doc-anchor-target id="changed-3">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#changed-2">#</doc-anchor-trigger>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#changed-3">#</doc-anchor-trigger>
         <span>Changed</span>
     </h3>
 </doc-anchor-target>
@@ -376,9 +395,9 @@ to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
 <ul class="contains-task-list">
 <li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> Added identity expiration</li>
 </ul>
-<doc-anchor-target id="changed-3">
+<doc-anchor-target id="changed-4">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#changed-3">#</doc-anchor-trigger>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#changed-4">#</doc-anchor-trigger>
         <span>Changed</span>
     </h3>
 </doc-anchor-target>
@@ -423,9 +442,9 @@ return <code v-pre>tuple[identity: Identity, credentials: Any, timeout: int | fl
 <li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> Added <code v-pre>Handler.conn</code> shortcut for <code v-pre>Handler.action.conn</code> typed with <code v-pre>server.Connection</code></li>
 <li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> Added <code v-pre>Auth</code> module fixtures to <code v-pre>test_utils</code></li>
 </ul>
-<doc-anchor-target id="changed-4">
+<doc-anchor-target id="changed-5">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#changed-4">#</doc-anchor-trigger>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#changed-5">#</doc-anchor-trigger>
         <span>Changed</span>
     </h3>
 </doc-anchor-target>
@@ -479,9 +498,9 @@ return <code v-pre>tuple[identity: Identity, credentials: Any, timeout: int | fl
     </h2>
 </doc-anchor-target>
 <p>Released: 2021-09-05</p>
-<doc-anchor-target id="changed-5">
+<doc-anchor-target id="changed-6">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#changed-5">#</doc-anchor-trigger>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#changed-6">#</doc-anchor-trigger>
         <span>Changed</span>
     </h3>
 </doc-anchor-target>
@@ -551,9 +570,9 @@ return <code v-pre>tuple[identity: Identity, credentials: Any, timeout: int | fl
     </h2>
 </doc-anchor-target>
 <p>Released: 2021-09-02</p>
-<doc-anchor-target id="changed-6">
+<doc-anchor-target id="changed-7">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#changed-6">#</doc-anchor-trigger>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#changed-7">#</doc-anchor-trigger>
         <span>Changed</span>
     </h3>
 </doc-anchor-target>
@@ -618,9 +637,9 @@ channel in all running servers</li>
 <li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> Added separate <code v-pre>Config</code> class</li>
 <li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> Server now chooses compressors from which client support</li>
 </ul>
-<doc-anchor-target id="changed-7">
+<doc-anchor-target id="changed-8">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#changed-7">#</doc-anchor-trigger>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#changed-8">#</doc-anchor-trigger>
         <span>Changed</span>
     </h3>
 </doc-anchor-target>
@@ -659,9 +678,9 @@ channel in all running servers</li>
     </h2>
 </doc-anchor-target>
 <p>Released: 2021-08-12</p>
-<doc-anchor-target id="changed-8">
+<doc-anchor-target id="changed-9">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#changed-8">#</doc-anchor-trigger>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#changed-9">#</doc-anchor-trigger>
         <span>Changed</span>
     </h3>
 </doc-anchor-target>
@@ -744,9 +763,9 @@ channel in all running servers</li>
     </h2>
 </doc-anchor-target>
 <p>Released: 2021-07-29</p>
-<doc-anchor-target id="changed-9">
+<doc-anchor-target id="changed-10">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#changed-9">#</doc-anchor-trigger>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#changed-10">#</doc-anchor-trigger>
         <span>Changed</span>
     </h3>
 </doc-anchor-target>
@@ -769,9 +788,9 @@ channel in all running servers</li>
     </h2>
 </doc-anchor-target>
 <p>Released: 2021-07-20</p>
-<doc-anchor-target id="changed-10">
+<doc-anchor-target id="changed-11">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#changed-10">#</doc-anchor-trigger>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#changed-11">#</doc-anchor-trigger>
         <span>Changed</span>
     </h3>
 </doc-anchor-target>
@@ -871,9 +890,9 @@ channel in all running servers</li>
 <ul class="contains-task-list">
 <li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> Added <code v-pre>MISSING = Missing()</code> placeholder for missing values</li>
 </ul>
-<doc-anchor-target id="changed-11">
+<doc-anchor-target id="changed-12">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#changed-11">#</doc-anchor-trigger>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#changed-12">#</doc-anchor-trigger>
         <span>Changed</span>
     </h3>
 </doc-anchor-target>
@@ -897,9 +916,9 @@ channel in all running servers</li>
 <ul class="contains-task-list">
 <li class="task-list-item"><input disabled="disabled" type="checkbox" checked="checked" /> Added scheme support in <code v-pre>JsonCodec.encode</code></li>
 </ul>
-<doc-anchor-target id="changed-12">
+<doc-anchor-target id="changed-13">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#changed-12">#</doc-anchor-trigger>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#changed-13">#</doc-anchor-trigger>
         <span>Changed</span>
     </h3>
 </doc-anchor-target>
@@ -947,9 +966,9 @@ channel in all running servers</li>
     </h2>
 </doc-anchor-target>
 <p>Released: 2021-07-07</p>
-<doc-anchor-target id="changed-13">
+<doc-anchor-target id="changed-14">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#changed-13">#</doc-anchor-trigger>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#changed-14">#</doc-anchor-trigger>
         <span>Changed</span>
     </h3>
 </doc-anchor-target>
