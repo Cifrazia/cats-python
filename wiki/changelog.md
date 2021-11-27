@@ -13,7 +13,15 @@ Expected: Q1 2022
 
 - [ ] Added different scheme language support: YAML, TOML
 
-## `4.5.9` [!badge variant="info" text="LATEST"]
+## `4.5.10` [!badge variant="info" text="LATEST"]
+
+Released: 2021-11-21
+
+### Changed
+
+- [x] Updated packages
+
+## `4.5.9`
 
 Released: 2021-11-12
 
