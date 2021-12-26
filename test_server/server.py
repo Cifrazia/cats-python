@@ -94,6 +94,11 @@ class JsonFormHandler(Handler, api=api, id=0x0040):
         )
 
 
+class Broadcast(Handler, api=api, id=0x0050):
+    async def handle(self):
+        raise NotImplementedError
+
+
 def main():
     import logging
     logging.basicConfig(level=logging.DEBUG, force=True)
@@ -116,7 +121,17 @@ def main():
     server = Server(app)
     server.bind(9095, '0.0.0.0')
     server.start(server_core)
-    IOLoop.current().start()
+
+    async def broadcast():
+        while True:
+            for srv in server.running_servers():
+                for conn in srv.connections:
+                    await conn.send(Broadcast.handler_id, b'ping!')
+            await asyncio.sleep(5)
+
+    loop = IOLoop.current()
+    loop.spawn_callback(broadcast)
+    loop.start()
 
 
 if __name__ == '__main__':

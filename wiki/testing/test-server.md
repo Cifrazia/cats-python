@@ -4,7 +4,7 @@
 
 1. Clone [this](https://github.com/cifrazia/cats-python) repo
 2. Build image with `docker build -t cats-test:latest .`
-3. Run image with `docker run --name cats-test -p 9095:9095 cats-test`
+3. Run image with `docker run --rm --name cats-test -p 9095:9095 cats-test`
 
 ## Config
 
@@ -103,3 +103,7 @@ Accepts and validates JSON payload. If valid, will return JSON payload.
   "token": "ABCDEF1234567890",
 }
 ```
+
+### Broadcast
+
+Every `5 seconds` clients will receive broadcast `Action` with payload `ping!` on Handler ID `0x0050`
