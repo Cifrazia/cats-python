@@ -52,7 +52,7 @@ Return json payload for different API versions, specified on client connection:
 
 - on API version before `1` fails
 - on API version `1` to `2` returns `{"version":1}`
-- on API version `3` to `4` returns `{"version":3}`
+- on API version `3` to `4` returns `{"version":2}`
 - on API version `5` fails
 - on API version `6` and up returns `{"version":3}`
 
