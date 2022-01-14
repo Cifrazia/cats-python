@@ -42,7 +42,10 @@ class Connection(BaseConnection):
         super().__init__(conf)
         self.api_version: int = api_version
         self.time_delta: float = 0.0
-        self.subscriptions: dict[int, dict[int, Callable[[Action], Awaitable[None] | None]]] = defaultdict(dict)
+        self.subscriptions: dict[
+            int, dict[int, Callable[[Action], Awaitable[None] | None]]] = defaultdict(
+            dict
+        )
         self._sub_id: int = 0
         self._listener: asyncio.Task | None = None
         self._sender: asyncio.Task | None = None
@@ -73,8 +76,11 @@ class Connection(BaseConnection):
         await self.write(to_uint(self.PROTOCOL_VERSION, 4))
         result = await self.read(4)
         if result != bytes(4):
-            raise ProtocolError(f'Unsupported protocol version. '
-                                f'Please upgrade your client to: {as_uint(result)}', conn=self)
+            raise ProtocolError(
+                f'Unsupported protocol version. '
+                f'Please upgrade your client to: {as_uint(result)}',
+                conn=self
+            )
 
         client_stmt = ClientStatement(
             api=self.api_version,
@@ -124,12 +130,20 @@ class Connection(BaseConnection):
         self.debug(f'Pong {action.send_time} [-] {action.recv_time}')
         await action.dump_data(0)
 
-    def subscribe(self, handler_id: int, handler: Callable[[Action], Awaitable[None] | None]) -> int:
+    def subscribe(
+        self,
+        handler_id: int,
+        handler: Callable[[Action], Awaitable[None] | None]
+    ) -> int:
         self._sub_id += 1
         self.subscriptions[handler_id][self._sub_id] = handler
         return self._sub_id
 
-    def unsubscribe(self, handler_id: int, handler: Callable[[Action], Awaitable[None] | None] | int) -> None:
+    def unsubscribe(
+        self,
+        handler_id: int,
+        handler: Callable[[Action], Awaitable[None] | None] | int
+    ) -> None:
         if handler_id in self.subscriptions:
             if isinstance(handler, int):
                 self.subscriptions[handler_id].pop(handler, None)
@@ -143,20 +157,37 @@ class Connection(BaseConnection):
         await self.write(b'\x05')
         await self.write(to_uint(speed, 4))
 
-    async def send(self, handler_id: int, data=None, message_id=None, compression=None, *,
-                   headers=None, status=None) -> ActionLike | None:
-        action = Action(data=data, headers=headers, status=status,
-                        message_id=self.get_free_message_id() if message_id is None else message_id,
-                        handler_id=handler_id, compression=compression)
+    async def send(
+        self,
+        handler_id: int,
+        data=None,
+        message_id=None,
+        compression=None, *,
+        headers=None, status=None
+    ) -> ActionLike | None:
+        action = Action(
+            data=data, headers=headers, status=status,
+            message_id=self.get_free_message_id() if message_id is None else message_id,
+            handler_id=handler_id, compression=compression
+        )
         await action.send(self)
         return await self.recv(action.message_id)
 
-    async def send_stream(self, handler_id: int, data: BytesAnyGen, data_type: int,
-                          message_id=None, compression=None, *,
-                          headers=None, status=None) -> ActionLike | None:
-        action = StreamAction(data=data, headers=headers, status=status,
-                              message_id=self.get_free_message_id() if message_id is None else message_id,
-                              handler_id=handler_id, data_type=data_type, compression=compression)
+    async def send_stream(
+        self,
+        handler_id: int,
+        data: BytesAnyGen,
+        data_type: int,
+        message_id=None,
+        compression=None, *,
+        headers=None,
+        status=None
+    ) -> ActionLike | None:
+        action = StreamAction(
+            data=data, headers=headers, status=status,
+            message_id=self.get_free_message_id() if message_id is None else message_id,
+            handler_id=handler_id, data_type=data_type, compression=compression
+        )
         await action.send(self)
         return await self.recv(action.message_id)
 
