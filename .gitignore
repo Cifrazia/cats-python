@@ -1,4 +1,5 @@
 .retype/
+requirements.txt
 
 !**/[Pp]ackages/build/
 !.axoCover/settings.json
