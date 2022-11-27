@@ -222,8 +222,6 @@ class BasicAction(BaseAction, abstract=True):
 
         buff = await Compressor.decompress(buff, self.headers, compression=self.compression)
         self.data = await Codec.decode(buff, self.data_type, self.headers)
-        if self.data_type == T_JSON:
-            self.conn.debug(f'[RECV {self.conn.address}] [{int2hex(self.message_id):<4}] <- {filter_json(self.data)}')
 
     async def _recv_large_data(self):
         left = self.data_len
@@ -245,7 +243,6 @@ class BasicAction(BaseAction, abstract=True):
 
     async def _recv_chunk(self, left):
         chunk = await self.conn.read(min(left, MAX_CHUNK_READ), partial=True)
-        self.conn.debug(f'[RECV {self.conn.address}] [{int2hex(self.message_id):<4}] <- {bytes2hex(chunk[:64])}...')
         left -= len(chunk)
         return chunk, left
 
@@ -284,12 +281,9 @@ class BasicAction(BaseAction, abstract=True):
                 chunk = fh.read(size)
                 left -= size
                 await delay(size)
-                conn.debug(f'[SEND {conn.address}] [{int2hex(self.message_id):<4}] -> {bytes2hex(chunk[:64])}...')
                 await conn.write(chunk)
         finally:
             fh.close()
-            if data_type == T_JSON:
-                conn.debug(f'[SEND {conn.address}] [{int2hex(self.message_id):<4}] -> {filter_json(self.data)}')
 
     def __repr__(self):
         return f'{type(self).__name__}(data={str(self.data)[:256]}, headers={self.headers}, ' \
@@ -456,8 +450,6 @@ class StreamAction(Action):
             with part.open('wb') as tmp:
                 while left > 0:
                     chunk = await self.conn.read(min(left, MAX_CHUNK_READ), partial=True)
-                    self.conn.debug(
-                        f'[RECV {self.conn.address}] [{int2hex(self.message_id):<4}] <- {bytes2hex(chunk[:64])}...')
                     left -= len(chunk)
                     tmp.write(chunk)
             await Compressor.decompress_file(part, dst, self.headers, compression=self.compression)
@@ -475,7 +467,6 @@ class StreamAction(Action):
         part = bytearray()
         while left > 0:
             chunk = await self.conn.read(min(left, MAX_CHUNK_READ), partial=True)
-            self.conn.debug(f'[RECV {self.conn.address}] [{int2hex(self.message_id):<4}] <- {bytes2hex(chunk[:64])}...')
             left -= len(chunk)
             part += chunk
         part = await Compressor.decompress(part, self.headers, compression=self.compression)
@@ -541,7 +532,6 @@ class StreamAction(Action):
             await delay(chunk_size + 4)
             await conn.write(to_uint(chunk_size, 4))
             await conn.write(chunk)
-            conn.debug(f'[SEND {conn.address}] [{int2hex(self.message_id):<4}] -> {bytes2hex(chunk[:64])}...')
         await conn.write(b'\x00\x00\x00\x00')
 
     async def _async_gen(self, gen, chunk_size):

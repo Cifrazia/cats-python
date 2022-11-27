@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cats-python"
-version = "4.5.11"
+version = "4.5.12"
 description = "Cifrazia Action Transport System for Python"
 authors = ["Bogdan Parfenov <adam.brian.bright@gmail.com>"]
 license = "MIT"
