@@ -15,17 +15,11 @@ try:
 except ImportError:
     BaseModel = type('BaseModel', (object,), {})
 
-try:
-    from djantic import ModelSchema
-except ImportError:
-    ModelSchema = type('ModelSchema', (object,), {})
-
 __all__ = [
     'QuerySet',
     'Model',
     'BaseSerializer',
     'BaseModel',
-    'ModelSchema',
     'Scheme',
     'SchemeTypes',
     'Form',
@@ -35,12 +29,11 @@ __all__ = [
     'scheme_json',
 ]
 
-Scheme: TypeAlias = Type[BaseModel] | Type[BaseSerializer] | Type[ModelSchema]
-SchemeTypes = BaseModel, BaseSerializer, ModelSchema
+Scheme: TypeAlias = Type[BaseModel] | Type[BaseSerializer]
+SchemeTypes = BaseModel, BaseSerializer
 PydanticModel = TypeVar('PydanticModel', bound=BaseModel)
 DRFModel = TypeVar('DRFModel', bound=BaseSerializer)
-DjanticModel = TypeVar('DjanticModel', bound=ModelSchema)
-Form: TypeAlias = PydanticModel | DRFModel | DjanticModel
+Form: TypeAlias = PydanticModel | DRFModel
 
 
 def without_missing(obj) -> Json | None:
@@ -82,11 +75,11 @@ class Pydantic:
         if many:
             return [cls.load(s, i, many=False, plain=plain) for i in data]
 
-        res = s.parse_obj(data)
+        res = s.model_validate(data)
         if plain:
             return res
 
-        return without_missing(res.dict())
+        return without_missing(res.model_dump())
 
     @classmethod
     def dump(cls, s: Type[BaseModel], data: Json | PydanticModel, *, many: bool = False, plain: bool = False) -> Json:
@@ -96,10 +89,12 @@ class Pydantic:
         if plain:
             assert isinstance(data, s)
         elif isinstance(data, (QuerySet, Model)):
-            data = s.from_orm(data)
+            s.model_config['from_attributes'] = True
+            data = s.model_validate(data)
         else:
-            data = s.parse_obj(data)
-        return data.dict()
+            s.model_config['from_attributes'] = False
+            data = s.model_validate(data)
+        return data.model_dump()
 
     @classmethod
     def json(cls, s: Type[BaseModel], data: Json | PydanticModel, *, many: bool = False, plain: bool = False) -> bytes:
@@ -109,53 +104,20 @@ class Pydantic:
         if plain:
             assert isinstance(data, s)
         elif isinstance(data, (QuerySet, Model)):
-            data = s.from_orm(data)
+            s.model_config['from_attributes'] = True
+            data = s.model_validate(data)
         else:
-            data = s.parse_obj(data)
-        res = data.json()
+            s.model_config['from_attributes'] = False
+            data = s.model_validate(data)
+        res = data.model_dump_json()
         if isinstance(res, bytes):
             return res
         return res.encode('utf-8')
 
 
-class Djantic(Pydantic):
-    @classmethod
-    def dump(cls, s: Type[ModelSchema], data: Json, *, many: bool = False, plain: bool = False) -> Json | DjanticModel:
-        if many:
-            return [cls.dump(s, i, many=False, plain=plain) for i in data]
-
-        if not isinstance(data, (QuerySet, Model)):
-            return super().dump(s, data, many=many, plain=plain)
-
-        if plain:
-            assert isinstance(data, s)
-        else:
-            data = s.from_django(data)
-        return data.json()
-
-    @classmethod
-    def json(cls, s: Type[ModelSchema], data: Json | DjanticModel, *, many: bool = False, plain: bool = False) -> bytes:
-        if many:
-            return b'[' + b','.join(cls.json(s, i, many=False, plain=plain) for i in data) + b']'
-
-        if not isinstance(data, (QuerySet, Model)):
-            return super().json(s, data, many=many, plain=plain)
-
-        if plain:
-            assert isinstance(data, s)
-        else:
-            data = s.from_django(data)
-        res = data.json()
-        if isinstance(res, bytes):
-            return res
-        return res.encode('utf-8')
-
-
-def _resolve_scheme_type(scheme: Scheme) -> Type[DRF] | Type[Djantic] | Type[Pydantic]:
+def _resolve_scheme_type(scheme: Scheme) -> Type[DRF] | Type[Pydantic]:
     if issubclass(scheme, BaseSerializer):
         return DRF
-    elif issubclass(scheme, ModelSchema):
-        return Djantic
     elif issubclass(scheme, BaseModel):
         return Pydantic
     else:

@@ -14,7 +14,10 @@ logging.basicConfig(level='DEBUG', force=True)
 def event_loop():
     if platform.system() == 'Windows':
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-    yield asyncio.new_event_loop()
+    loop = asyncio.new_event_loop()
+    yield loop
+    if not loop.is_closed():
+        loop.close()
 
 
 @fixture(scope='session')

@@ -7,7 +7,7 @@ from typing import IO, TypeAlias
 import ujson
 
 from cats.errors import *
-from cats.plugins import BaseModel, BaseSerializer, Form, ModelSchema, scheme_json
+from cats.plugins import BaseModel, BaseSerializer, Form, scheme_json
 from cats.types import Byte, Json, List, T_Headers
 from cats.utils import tmp_file
 
@@ -92,11 +92,11 @@ class JsonCodec(BaseCodec):
     async def encode(cls, data: Json | Form | list[Form], headers: T_Headers, offset: int = 0) -> bytes:
         try:
             if data:
-                if isinstance(data, (BaseModel, BaseSerializer, ModelSchema)):
+                if isinstance(data, (BaseModel, BaseSerializer)):
                     return scheme_json(type(data), data, many=False, plain=True)
                 elif isinstance(data, List):
                     data = list(data)
-                    if isinstance(data[0], (BaseModel, BaseSerializer, ModelSchema)):
+                    if isinstance(data[0], (BaseModel, BaseSerializer)):
                         return scheme_json(type(data[0]), data, many=True, plain=True)
             return await cls._encode(data, offset=offset)
         except TypeError as err:
@@ -277,7 +277,7 @@ class Codec:
 
     def get_codec_name(self, type_id: int, default: str = 'unknown') -> str:
         """
-        Returns Type Name by it's id (w/ fallback to default)
+        Returns Type Name by its id (w/ fallback to default)
         :param type_id:
         :param default:
         :return:

@@ -5,7 +5,6 @@ from random import randint
 from time import time_ns
 from typing import Iterable
 
-import rollbar
 from tornado.iostream import IOStream
 
 from cats.errors import ProtocolError
@@ -98,21 +97,15 @@ class Connection(BaseConnection):
         elif isinstance(action, Action):
             async with self.preserve_message_id(action.message_id):
                 handler = self.dispatch(action.handler_id)
-                try:
-                    result = await self.app.run(handler(action))
-                    if result is not None:
-                        if not isinstance(result, Action):
-                            raise ProtocolError('Returned invalid response', conn=self)
+                result = await self.app.run(handler(action))
+                if result is not None:
+                    if not isinstance(result, Action):
+                        raise ProtocolError('Returned invalid response', conn=self)
 
-                        result.handler_id = action.handler_id
-                        result.message_id = action.message_id
-                        result.offset = action.offset
-                        await result.send(self)
-                except action.conn.conf.ignore_errors:
-                    raise
-                except Exception:
-                    rollbar.report_exc_info(extra_data=self.identity_scope_user)
-                    raise
+                    result.handler_id = action.handler_id
+                    result.message_id = action.message_id
+                    result.offset = action.offset
+                    await result.send(self)
 
     def dispatch(self, handler_id):
         handlers = self.app.get_handlers_by_id(handler_id)

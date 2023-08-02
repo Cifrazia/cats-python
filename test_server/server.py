@@ -85,7 +85,7 @@ class JsonFormHandler(Handler, api=api, id=0x0040):
         code: constr(min_length=6, max_length=6)
 
     async def handle(self):
-        user = await self.json_load()
+        _ = await self.json_load()
         return await self.json_dump(
             {
                 'token': os.urandom(32).hex(),

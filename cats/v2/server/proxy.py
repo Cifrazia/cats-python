@@ -77,32 +77,34 @@ def parse_proxy_line(line: bytes | bytearray) -> tuple[ProxyDict, int]:
         raise ProxyProtocolInvalidLine()
 
     # Check if the proxy line is for v1 of the protocol.
-    if fields[0] == b"PROXY":
-        try:
-            if fields[1] == b"TCP4" or fields[1] == b"TCP6":
-                source_addr = fields[2]
-                dest_addr = fields[3]
-                source_port = int(fields[4])
-                dest_port = int(fields[5])
-            else:
-                raise ProxyProtocolInvalidAddress()
-        except:
+    if fields[0] != b"PROXY":
+        raise ProxyProtocolInvalidLine()
+
+    try:
+        if fields[1] == b"TCP4" or fields[1] == b"TCP6":
+            source_addr = fields[2]
+            dest_addr = fields[3]
+            source_port = int(fields[4])
+            dest_port = int(fields[5])
+        else:
             raise ProxyProtocolInvalidAddress()
+    except ValueError:
+        raise ProxyProtocolInvalidAddress()
 
-        return {
-                   'client_ip': source_addr.decode('utf-8'),
-                   'client_port': source_port,
-                   'local_ip': dest_addr.decode('utf-8'),
-                   'local_port': dest_port
-               }, int(idx + 2)
-    raise ProxyProtocolInvalidLine()
+    return {
+        'client_ip': source_addr.decode('utf-8'),
+        'client_port': source_port,
+        'local_ip': dest_addr.decode('utf-8'),
+        'local_port': dest_port
+    }, int(idx + 2)
 
 
+# noinspection PyProtectedMember
 def putback_line_in_stream(line: bytes | bytearray, stream: IOStream):
     """
-    HACKY: This call reinjects the given line back into the stream.
+    HACKY: This call re-injects the given line back into the stream.
 
-    This emulates a "putback" or "unget" operation. This is subject to
+    This emulates a "putback" or "un-get" operation. This is subject to
     break, though, so it should be used with caution, since it uses
     tornado internals.
     """
@@ -160,6 +162,7 @@ def handle_with_proxy(fn: tcpserver.TCPServer.handle_stream = None):
 
     @wraps(fn)
     async def handle_stream(self, stream: IOStream, address: tuple[str, int]):
+        # noinspection PyBroadException
         try:
             addr = await parse_proxy_line_from_buff(stream)
             if addr is not None:
@@ -168,7 +171,7 @@ def handle_with_proxy(fn: tcpserver.TCPServer.handle_stream = None):
             return await fn(self, stream, address)
         except iostream.StreamClosedError:
             raise
-        except:
+        except Exception:
             return await fn(self, stream, address)
 
     return handle_stream
@@ -181,7 +184,7 @@ class ProxyProtocolTCPServer(tcpserver.TCPServer):
     as an attribute named 'proxy_addr'.
 
     The proxy protocol spec is defined here:
-    http://www.haproxy.org/download/1.8/doc/proxy-protocol.txt
+    https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt
     """
 
     async def handle_stream(self, stream: IOStream, address: tuple[str, int]):
@@ -251,7 +254,7 @@ class ProxyProtocolHTTPServer(httpserver.HTTPServer):
     Wrapper for tornado.httpserver.HTTPServer that parses out the
     HAProxy PROXY protocol and sets the appropriate remote_ip as
     defined here:
-    http://www.haproxy.org/download/1.8/doc/proxy-protocol.txt
+    https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt
     """
 
     async def handle_stream(self, stream: IOStream, address: tuple[str, int]):
@@ -261,6 +264,7 @@ class ProxyProtocolHTTPServer(httpserver.HTTPServer):
         This parses out the proxy protocol from the request and injects the
         relevant fields onto the given stream object at: `stream.proxy_addr`
         """
+        # noinspection PyBroadException
         try:
             addr = await parse_proxy_line_from_buff(stream)
             if addr is not None:
@@ -270,7 +274,7 @@ class ProxyProtocolHTTPServer(httpserver.HTTPServer):
             super(ProxyProtocolHTTPServer, self).handle_stream(stream, address)
         except iostream.StreamClosedError:
             pass
-        except:
+        except Exception:
             super(ProxyProtocolHTTPServer, self).handle_stream(stream, address)
 
     def start_request(self, server_conn, request_conn):
@@ -284,6 +288,7 @@ class ProxyProtocolHTTPServer(httpserver.HTTPServer):
         # have been attached to the socket in the 'proxy_addr' attribute, so we try
         # to fetch it. If we couldn't, just ignore it and default to the usual
         # behavior. (Should we log it instead?)
+        # noinspection PyBroadException
         try:
             proxy_addr = server_conn.stream.proxy_addr
             addr = proxy_addr['client_ip']

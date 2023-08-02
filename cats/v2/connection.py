@@ -4,7 +4,6 @@ from logging import Logger
 from traceback import format_tb
 from typing import TypeVar
 
-import rollbar
 from tornado.iostream import IOStream
 
 from cats.errors import ProtocolError
@@ -130,10 +129,7 @@ class Connection:
 
         try:
             await self.handle(await action_class.init(self))
-        except self.conf.ignore_errors as err:
-            self.close(err)
         except Exception as err:
-            rollbar.report_exc_info(extra_data=self.identity_scope_user)  # FIXME: Use plugins/middleware for this
             self.close(err)
 
     def on_tick_done(self, task):

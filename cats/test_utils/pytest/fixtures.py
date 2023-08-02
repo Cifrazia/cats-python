@@ -1,7 +1,8 @@
 import warnings
 from typing import Type
 
-from pytest import PytestWarning, fixture, mark
+import pytest_asyncio
+from pytest import PytestWarning, fixture
 
 from cats.test_utils.client import Connection
 from cats.v2 import Config, Handshake
@@ -77,8 +78,7 @@ def cats_app(cats_apis, cats_middleware, cats_config, cats_auth, cats_server_con
     )
 
 
-@fixture(scope='session')
-@mark.asyncio
+@pytest_asyncio.fixture(scope='session')
 async def cats_server(cats_app) -> Server:
     """
     Runs an TCP server for each module and return port
@@ -92,8 +92,7 @@ async def cats_server(cats_app) -> Server:
     await server.shutdown()
 
 
-@fixture
-@mark.asyncio
+@pytest_asyncio.fixture
 async def cats_conn(cats_config, cats_api_version, cats_server) -> Connection:
     """
     Return TCP connection to test TCP server

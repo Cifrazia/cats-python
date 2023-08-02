@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cats-python"
-version = "4.5.12"
+version = "4.6.0"
 description = "Cifrazia Action Transport System for Python"
 authors = ["Bogdan Parfenov <adam.brian.bright@gmail.com>"]
 license = "MIT"
@@ -39,36 +39,34 @@ packages = [
 "Contact Author" = "https://vk.com/adam_bright"
 
 [tool.poetry.dependencies]
-python = ">=3.10.0, <4.0"
+python = ">=3.10.0, <3.11"
 
 richerr = "^0.2.3"
 struct-model-python = "^0.1.1"
 
-pytz = "^2021.3"
+pytz = "^2023.3"
 tornado = "^6.1"
 PyYAML = "^6.0"
 toml = "^0.10.2"
 msgpack = "^1.0.3"
 Django = { version = ">=2.0, <3.0", optional = true }
-djangorestframework = { version = ">=3.12.4", optional = true }
-pydantic = { version = ">=1.9.0", optional = true }
-djantic = { version = ">=0.3.3", optional = true }
-rollbar = "^0.16.2"
+djangorestframework = { version = "3.13", optional = true }
+pydantic = { version = ">=2.1.0", optional = true }
 ujson = "^5.1.0"
 
 [tool.poetry.extras]
 django = ["Django", "djangorestframework"]
 pydantic = ["pydantic"]
-djantic = ["djantic", "pydantic", "Django"]
 
-[tool.poetry.dev-dependencies]
-pytest = "^6.2.5"
-pytest-asyncio = "^0.17.0"
-pydantic = "^1.8.2"
-coverage = "^6.0.2"
 
 [tool.poetry.plugins."pytest11"]
 "pytest_cats" = "cats.test_utils.pytest.plugin"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.0"
+pytest-asyncio = "^0.21.1"
+pydantic = "^2.1.1"
+coverage = "^7.2.7"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

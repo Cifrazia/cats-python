@@ -1,17 +1,26 @@
 # Changelog
 
+!!!WARNING
+This package is deprecated and should not be used. It will continue to exist until fully migrated and will be archived.
+
+THIS PACKAGE MAY BE DELETED. DO NOT USE IT.
+!!!
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project poorly adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## `5.0.0` [!badge variant="info" text="NEXT"]
+## `4.6.0`
 
-Expected: Q1 2022
+### Removed
 
-### Added
+- [x] Removed `rollbar` dependency
+- [x] Removed `Djantic` support
 
-- [ ] Added different scheme language support: YAML, TOML
+### Changed
+
+- [x] Bumped dependency versions
 
 ## `4.5.10` [!badge variant="info" text="LATEST"]
 

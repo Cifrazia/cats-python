@@ -1,17 +1,17 @@
 import asyncio
+import math
 from io import BytesIO
 from pathlib import Path
 from struct import Struct
 from time import time_ns
 from typing import NamedTuple, Type, TypeAlias, TypeVar
 
-import math
 import struct_model
 
 from cats.errors import CatsUsageError, InputCancelled, MalformedDataError, ProtocolError
 from cats.types import Bytes, Headers
-from cats.utils import Delay, as_uint, bytes2hex, filter_json, format_amount, int2hex, tmp_file, to_uint
-from cats.v2.codecs import Codec, T_FILE, T_JSON
+from cats.utils import Delay, as_uint, format_amount, int2hex, tmp_file, to_uint
+from cats.v2.codecs import Codec, T_FILE
 from cats.v2.compression import Compressor
 
 __all__ = [
@@ -534,7 +534,8 @@ class StreamAction(Action):
             await conn.write(chunk)
         await conn.write(b'\x00\x00\x00\x00')
 
-    async def _async_gen(self, gen, chunk_size):
+    @staticmethod
+    async def _async_gen(gen, chunk_size):
         size = max(chunk_size, MAX_IN_MEMORY) or MAX_IN_MEMORY
         if hasattr(gen, '__iter__'):
             for item in gen:

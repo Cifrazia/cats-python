@@ -21,6 +21,7 @@ __all__ = [
     'bytes2hex',
     'format_amount',
     'filter_json',
+    'str2bytes',
 ]
 
 logging = getLogger('CATS.utils')
@@ -139,7 +140,7 @@ def format_amount(num: int, *, base: int = 1024, prefix: str = '', suffix: str =
 
     :param num: numeric amount
     :param base: how much does the step takes (default 1024 as for bytes)
-    :param prefix: type prefix (default '')
+    :param prefix: type prefix (default "")
     :param suffix: type suffix (default B as for bytes)
     :return: Formatted amount string
     :raise TypeError:
@@ -194,3 +195,7 @@ def _filter_json_part(json: Json, max_len: int = 16, max_size: int = 64) -> Json
     if isinstance(json, str) and len(json) > max_len:
         return json[:max_len] + '...'
     return json
+
+
+def str2bytes(s: str) -> bytes:
+    return s.encode('utf-8')

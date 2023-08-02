@@ -14,7 +14,6 @@ from cats.utils import as_uint, to_uint
 from cats.v2.connection import ConnType, Connection
 from cats.v2.server.application import Application
 from cats.v2.server.connection import Connection as ServerConnection
-
 from cats.v2.server.proxy import handle_with_proxy
 
 __all__ = [
@@ -30,10 +29,10 @@ class Server(TCPServer):
     instances: list['Server'] = []
 
     def __init__(
-        self, app: Application,
-        ssl_options: dict[str] | ssl.SSLContext | None = None,
-        max_buffer_size: int | None = None,
-        read_chunk_size: int | None = None
+            self, app: Application,
+            ssl_options: dict[str] | ssl.SSLContext | None = None,
+            max_buffer_size: int | None = None,
+            read_chunk_size: int | None = None
     ):
         self.app: Application = app
         self.port: int | None = None
@@ -46,13 +45,13 @@ class Server(TCPServer):
 
     @classmethod
     async def broadcast(
-        cls,
-        channel: str,
-        handler_id: int,
-        data=None,
-        message_id: int = None,
-        compression: int = None,
-        *, headers=None, status: int = None
+            cls,
+            channel: str,
+            handler_id: int,
+            data=None,
+            message_id: int = None,
+            compression: int = None,
+            *, headers=None, status: int = None
     ):
         return await asyncio.gather(
             *(
@@ -71,14 +70,14 @@ class Server(TCPServer):
 
     @classmethod
     async def conditional_broadcast(
-        cls,
-        channel: str,
-        _filter: Callable[['Server', Connection], bool],
-        handler_id: int,
-        data=None,
-        message_id: int = None,
-        compression: int = None,
-        *, headers=None, status: int = None
+            cls,
+            channel: str,
+            _filter: Callable[['Server', Connection], bool],
+            handler_id: int,
+            data=None,
+            message_id: int = None,
+            compression: int = None,
+            *, headers=None, status: int = None
     ):
         return await asyncio.gather(
             *(
@@ -116,10 +115,10 @@ class Server(TCPServer):
 
     @asynccontextmanager
     async def create_connection(
-        self,
-        stream: IOStream,
-        address: tuple[str, int],
-        protocol: int,
+            self,
+            stream: IOStream,
+            address: tuple[str, int],
+            protocol: int,
     ) -> ConnType:
         conn_class = self.app.ConnectionClass or ServerConnection
         conn = conn_class(stream, address, protocol, self.app.config, self.app)
@@ -166,16 +165,28 @@ class Server(TCPServer):
         logging.info(f'Starting server at 127.0.0.1:{port}')
 
     def bind(
-        self, port: int, address: str = None,
-        family: socket.AddressFamily = socket.AF_UNSPEC,
-        backlog: int = 128, reuse_port: bool = False
+            self,
+            port: int,
+            address: str | None = None,
+            family: socket.AddressFamily = socket.AF_UNSPEC,
+            backlog: int = 128,
+            flags: int | None = None,
+            reuse_port: bool = False
     ) -> None:
-        super().bind(port, address, family, backlog, reuse_port)
+        super().bind(port, address, family, backlog, flags, reuse_port)
         self.port = port
         logging.info(f'Starting server at {address}:{port}')
 
-    def listen(self, port: int, address: str = "") -> None:
-        super().listen(port, address)
+    def listen(
+            self,
+            port: int,
+            address: str | None = None,
+            family: socket.AddressFamily = socket.AF_UNSPEC,
+            backlog: int = 128,
+            flags: int | None = None,
+            reuse_port: bool = False,
+    ) -> None:
+        super().listen(port, address, family, backlog, flags, reuse_port)
         self.port = port
         logging.info(f'Starting server at {address}:{port}')
 

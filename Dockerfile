@@ -1,4 +1,4 @@
-FROM python:3.10.1-slim-buster
+FROM python:3.10.9-slim-buster
 ENV _CODE=/code
 WORKDIR $_CODE
 COPY requirements.txt $_CODE

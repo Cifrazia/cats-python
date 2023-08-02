@@ -1,3 +1,6 @@
+from cats.utils import str2bytes
+
+
 def main(host: str, port: int,
          handshake: bytes | None,
          api: int,
@@ -49,7 +52,7 @@ if __name__ == '__main__':
                         default='0.0.0.0', help='CATS.v2.server host. Default: 0.0.0.0')
     parser.add_argument('--port', '-P', dest='port', type=int,
                         default=9191, help='CATS.v2.server port. Default: 9191')
-    parser.add_argument('--handshake', dest='handshake', type=bytes,
+    parser.add_argument('--handshake', dest='handshake', type=str2bytes,
                         default=None, help='Handshake secret key. Default: [disabled]')
     parser.add_argument('--input-timeout', dest='input_timeout', type=float,
                         default=120.0, help='Input timeout. Default: 120.0')

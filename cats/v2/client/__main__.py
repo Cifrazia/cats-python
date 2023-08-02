@@ -1,17 +1,18 @@
 from tornado.iostream import StreamClosedError
 
+from cats import str2bytes
 from cats.errors import HandshakeError, ProtocolError
 from cats.v2.action import PingAction
 
 
 async def main(
-    host: str, port: int,
-    handshake: bytes | None,
-    api: int,
-    input_timeout: float,
-    idle_timeout: float,
-    tls: bool,
-    debug: bool
+        host: str, port: int,
+        handshake: bytes | None,
+        api: int,
+        input_timeout: float,
+        idle_timeout: float,
+        tls: bool,
+        debug: bool
 ):
     import logging
     from cats.v2 import Config, SHA256TimeHandshake
@@ -45,8 +46,7 @@ async def main(
     except StreamClosedError:
         exit(1)
     except Exception:
-        exit(500)
-        raise
+        raise exit(500)
 
 
 if __name__ == '__main__':
@@ -63,7 +63,7 @@ if __name__ == '__main__':
         default=9191, help='CATS.v2.server port. Default: 9191',
     )
     parser.add_argument(
-        '--handshake', dest='handshake', type=bytes,
+        '--handshake', dest='handshake', type=str2bytes,
         default=None, help='Handshake secret key. Default: [disabled]',
     )
     parser.add_argument(
