@@ -11,6 +11,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project poorly adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## `4.7.0` [!badge variant="info" text="LATEST"]
+
+### Added
+
+- [x] Added exec time log
+
+### Changed
+
+- [x] Updated python to `3.12+`
+- [x] Updated django to `4.0+`, DRF to `3.14+`
+- [x] Updated pydantic to `2.4+`
+- [x] Updated richerr-python to `0.3.0+`
+- [x] Updated struct-model-python to `0.2.0+`
+
 ## `4.6.0`
 
 ### Removed
@@ -22,7 +36,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - [x] Bumped dependency versions
 
-## `4.5.10` [!badge variant="info" text="LATEST"]
+## `4.5.10`
 
 Released: 2021-11-21
 
@@ -176,8 +190,8 @@ Released: 2021-09-05
 ### Added
 
 - [x] Added `test_utils` module:
-  - [x] Added `client.Connection` test class with broadcast inbox
-  - [x] Added `pytest` plugin
+    - [x] Added `client.Connection` test class with broadcast inbox
+    - [x] Added `pytest` plugin
 
 ## `4.2.0`
 
@@ -277,8 +291,8 @@ Released: 2021-08-08
 ### Fixed
 
 - [x] Fixed `Action.handle` causing problems:
-  - [x] Fixed `Message ID` duplication in `Connection.message_pool`
-  - [x] Fixed `Exception` suppression
+    - [x] Fixed `Message ID` duplication in `Connection.message_pool`
+    - [x] Fixed `Exception` suppression
 
 ## `0.3.14`
 

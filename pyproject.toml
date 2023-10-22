@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cats-python"
-version = "4.6.1"
+version = "4.7.0"
 description = "Cifrazia Action Transport System for Python"
 authors = ["Bogdan Parfenov <adam.brian.bright@gmail.com>"]
 license = "MIT"
@@ -39,19 +39,19 @@ packages = [
 "Contact Author" = "https://vk.com/adam_bright"
 
 [tool.poetry.dependencies]
-python = ">=3.10.0, <3.11"
+python = ">=3.12,<4.0"
 
-richerr = "^0.2.3"
-struct-model-python = "^0.1.1"
+richerr = "^0.3.0"
+struct-model-python = "^0.2.0"
 
 pytz = "^2023.3"
 tornado = "^6.1"
 PyYAML = "^6.0"
 toml = "^0.10.2"
 msgpack = "^1.0.3"
-Django = { version = ">=2.0, <3.0", optional = true }
-djangorestframework = { version = "3.13", optional = true }
-pydantic = { version = ">=2.1.0", optional = true }
+Django = { version = ">=4.0", optional = true }
+djangorestframework = { version = ">=3.13", optional = true }
+pydantic = { version = ">=2.4.2", optional = true }
 ujson = "^5.1.0"
 
 [tool.poetry.extras]
@@ -65,7 +65,7 @@ pydantic = ["pydantic"]
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"
 pytest-asyncio = "^0.21.1"
-pydantic = "^2.1.1"
+pydantic = "^2.4.2"
 coverage = "^7.2.7"
 
 [build-system]

@@ -1,9 +1,9 @@
 import asyncio
 from collections import defaultdict
 from dataclasses import dataclass
+from datetime import datetime
 from logging import getLogger
 from random import random
-from time import time
 from typing import Awaitable, Type
 
 from cats.errors import ActionError
@@ -135,16 +135,19 @@ class Handler:
         return self.action.conn
 
     async def __call__(self) -> ActionLike | None:
-        st = time()
+        st = datetime.now()
         res = await self.prepare()
         if not isinstance(res, Action):
             res = await self.handle()
+        end = datetime.now()
+        took = end - st
         if self.fix_exec_time is not None:
-            sp = time() - st
+            sp = (end - st).total_seconds()
             if sp < self.fix_exec_time:
                 await asyncio.sleep(self.fix_exec_time - sp - random() / 20)
             elif sp > self.fix_exec_time + 0.2:
                 logging.warning(f'{type(self).__qualname__} run time exceeded fixed: {sp:.3f}/{self.fix_exec_time:.3f}')
+        self.conn.debug(f'[EXEC {self.conn.address}] Handler {type(self).__name__} took {end - st}')
         return res
 
     async def prepare(self) -> None:

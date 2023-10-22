@@ -290,8 +290,9 @@ class ProxyProtocolHTTPServer(httpserver.HTTPServer):
         # behavior. (Should we log it instead?)
         # noinspection PyBroadException
         try:
+            # noinspection PyUnresolvedReferences
             proxy_addr = server_conn.stream.proxy_addr
             addr = proxy_addr['client_ip']
             return ProxyProtocolAdapter(delegate, request_conn, proxy_ip=addr)
-        except Exception as e:
+        except Exception:
             return delegate
